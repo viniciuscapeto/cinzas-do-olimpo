@@ -119,7 +119,7 @@ kbd{font-family:var(--f-pix);font-size:.66rem;border:1px solid var(--edge);paddi
     </div>
     <div class="pad" id="pad">
       <div><button data-k="left" aria-label="Esquerda">◀</button><button data-k="down" aria-label="Baixo">▼</button><button data-k="right" aria-label="Direita">▶</button></div>
-      <div><button data-k="shoot" class="sm">Arco</button><button data-k="heal" class="sm" id="healbtn">Cura</button><button data-k="power" class="sm pow" id="powbtn">Poder</button><button data-k="dash" class="sm">Invest.</button><button data-k="attack" class="big">Atacar</button><button data-k="jump" class="big">Pular</button></div>
+      <div><button data-k="swap" class="sm">Arma</button><button data-k="shoot" class="sm">Arco</button><button data-k="heal" class="sm" id="healbtn">Cura</button><button data-k="power" class="sm pow" id="powbtn">Poder</button><button data-k="dash" class="sm">Invest.</button><button data-k="attack" class="big">Atacar</button><button data-k="jump" class="big">Pular</button></div>
     </div>
   </div>
   <div class="bar"><span id="abil"></span>
@@ -498,7 +498,7 @@ const LINES={
      'A fornalha dele fica no fundo da mina, a oeste. Se você conseguir parar aquele monte de bronze... eu tenho umas coisas guardadas.',
      'E no fim do túnel, a leste, lá embaixo, o chão é rachado. Às vezes sobe um barulho de asas. Nenhum mineiro desceu para ver.'],
     ['Ele parou? Depois de dez anos... obrigado.',
-     'Tome. Bronze puro, guardei para o dia em que pudesse sair daqui. Leve ao Bronte e diga que o Colosso finalmente descansou.']],
+     'Tome. Bronze puro, guardei para o dia em que pudesse sair daqui. E o martelo do Bronte: ele esqueceu aqui quando fez o Colosso. Diga a ele que o Colosso finalmente descansou.']],
   t9:[['"Porto de Olimpo. Barcos para o rio de cinza toda manhã."','Embaixo, à mão: "A mina fica pelo buraco no fim do cais. O farol, pelos degraus no meio."']],
   t6:[['"Relógio de Olimpo, feito por Tirésias. Que marque só horas felizes."','Os ponteiros estão parados em meia-noite e três. Alguém riscou embaixo: "a hora do sino".']],
   t7:[['"Guarda de Olimpo. Nós ficamos para que os outros possam ir."','O tecido queimou. Só o fio de ouro resistiu.']],
@@ -511,7 +511,8 @@ const TALK_DONE={
   damiao:()=>dojo(),
   bras:()=>{if(save.boss7Dead)trialsMenu()},
   zoe:()=>shopMenu(),
-  iago:st=>{if(st===1&&!save.flags.iago){save.flags.iago=1;save.bronze+=4;persist();sfx('pickup');showMsg({n:'Bronze do Iago',d:'4 fragmentos de bronze puro. Leve à forja do Bronte, em qualquer altar.'})}},
+  iago:st=>{if(st===1&&!save.flags.iago){save.flags.iago=1;save.bronze+=4;if(!save.weapons.includes('hammer'))save.weapons.push('hammer');save.weapon='hammer';persist();updateAbil();sfx('pickup');
+    showMsg({n:'Martelo do Bronte e bronze do Iago',d:'Iago guardava o martelo que o Bronte deixou na mina, e 4 fragmentos de bronze. '+WEAPONS.hammer.d+' Troque de arma com T (botão ARMA).'})}},
   lino:st=>{if(st===0)save.flags.lino=1;
     if(st===1&&!save.flags.bell){save.flags.bell=1;save.maxHp++;P.hp=maxHp();save.ash+=15;updateAbil();persist();sfx('pickup');
       showMsg({n:'Sininho de Lata',d:'Uma brasa pequena queima dentro dele. Sua vida máxima aumentou em 1, e você ganhou 15 cinzas.'})}},
@@ -577,6 +578,22 @@ const ATK={
   3:{dur:26,a0:4,a1:19,from:-1.6,to:-1.6+Math.PI*2,dist:34,dmg:2,spin:true},
   4:{dur:26,a0:7,a1:16,from:-2.3,to:1.1,dist:44,dmg:3,heavy:true}, // golpe carregado
 };
+/* armas de corpo a corpo: cada uma tem a própria tabela de golpes (o golpe carregado, n=4, é igual para todas) */
+const WEAPONS={
+  sword:{n:'Espada de Teo',d:'Equilibrada. Três golpes; o terceiro é um giro.',atk:ATK,trail:[255,140,40],fury:1},
+  spear:{n:'Lança da Guarda',d:'Alcance bem maior e golpes rápidos em linha reta. O terceiro é uma estocada longa. Ruim contra quem está em cima de você.',fury:1,trail:[190,215,255],
+    atk:{...ATK,1:{dur:14,a0:2,a1:9,from:-.25,to:.12,dist:54,dmg:1},2:{dur:14,a0:2,a1:9,from:.2,to:-.15,dist:54,dmg:1},3:{dur:24,a0:5,a1:15,from:-.08,to:.08,dist:68,dmg:2}}},
+  scythe:{n:'Foice da Ceifadora',d:'Arcos largos que pegam na frente e em cima. Enche a barra de Erupção 60% mais rápido. Dano um pouco menor no giro.',fury:1.6,trail:[180,120,255],
+    atk:{...ATK,1:{dur:20,a0:3,a1:14,from:-2.6,to:1.2,dist:40,dmg:1},2:{dur:20,a0:3,a1:14,from:1.2,to:-2.6,dist:40,dmg:1},3:{dur:28,a0:4,a1:22,from:-1.6,to:-1.6+Math.PI*2,dist:46,dmg:1.5,spin:true}}},
+  hammer:{n:'Martelo do Bronte',d:'Lento e pesado: dano dobrado, quebra escudos, e o terceiro golpe racha o chão soltando ondas dos dois lados.',fury:1,heavy:true,trail:[255,205,100],
+    atk:{...ATK,1:{dur:26,a0:9,a1:15,from:-2.3,to:.8,dist:30,dmg:2},2:{dur:26,a0:9,a1:15,from:-2.1,to:1,dist:30,dmg:2},3:{dur:36,a0:13,a1:20,from:-2.7,to:1.3,dist:34,dmg:4,quake:true}}},
+};
+const curW=()=>WEAPONS[save&&save.weapon]||WEAPONS.sword;
+const curATK=()=>curW().atk;
+function giveWeapon(id){
+  if(!save.weapons.includes(id))save.weapons.push(id);save.weapon=id;persist();updateAbil();sfx('pickup');
+  showMsg({n:'Arma nova: '+WEAPONS[id].n,d:WEAPONS[id].d+' Troque de arma com a tecla T (botão ARMA no celular).'});
+}
 const CHG=36; // quadros segurando atacar até o golpe carregado ficar pronto
 
 let grid,seen=new Uint8Array(W*H),ents,items,statues,fxp,waves,shots,pshots=[],zones,chests=[],trial=null,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,boss,P,save,cam={x:0,y:0},talkQ=null,SC=null;
@@ -778,7 +795,7 @@ function breakWall(tx,ty){
 /* ---------- estado ---------- */
 function freshSave(){return{ab:{jump:false,dash:false,wall:false},maxHp:5,cp:{x:4,y:21},taken:[],broken:[],bossDead:false,boss2Dead:false,boss3Dead:false,boss4Dead:false,boss5Dead:false,
   boss6Dead:false,boss7Dead:false,boss8Dead:false,boss9Dead:false,boss10Dead:false,boss11Dead:false,talked:{},ash:0,tech:{},flags:{},
-  bronze:0,swordLv:0,flaskMax:2,flaskLv:0,slots:3,charms:[],equip:[],chests:[],lit:[],ng:0,trials:{},
+  weapons:['sword'],weapon:'sword',bronze:0,swordLv:0,flaskMax:2,flaskLv:0,slots:3,charms:[],equip:[],chests:[],lit:[],ng:0,trials:{},
   boss12Dead:false,boss13Dead:false,boss14Dead:false,boss15Dead:false,boss16Dead:false,boss17Dead:false,arrowsMax:0,quiverLv:0,tipsLv:0}}
 const hasCharm=id=>save.equip.includes(id);
 const maxHp=()=>save.maxHp+(hasCharm('ferro')?1:0);
@@ -827,7 +844,7 @@ function mkMedusa(){return{kind:'medusa',name:'ILÍA, A ESCULTORA',x:172*TS,y:14
 /* ---------- entrada ---------- */
 const keys={};let prev={};
 const KEYMAP={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowDown:'down',KeyS:'down',
-  ArrowUp:'jump',KeyW:'jump',Space:'jump',KeyZ:'jump',KeyE:'down',KeyQ:'power',KeyL:'power',KeyJ:'attack',KeyX:'attack',KeyK:'dash',KeyC:'dash',ShiftLeft:'dash',ShiftRight:'dash',KeyR:'heal',KeyH:'heal',KeyI:'shoot',KeyV:'shoot'};
+  ArrowUp:'jump',KeyW:'jump',Space:'jump',KeyZ:'jump',KeyE:'down',KeyQ:'power',KeyL:'power',KeyJ:'attack',KeyX:'attack',KeyK:'dash',KeyC:'dash',ShiftLeft:'dash',ShiftRight:'dash',KeyR:'heal',KeyH:'heal',KeyI:'shoot',KeyV:'shoot',KeyT:'swap'};
 // toques rápidos ficam guardados até o jogo processar (não se perdem na pausa de impacto)
 const tapped={};
 const pressed=k=>(keys[k]&&!prev[k])||tapped[k];
@@ -969,6 +986,7 @@ function updatePlayer(){
     else if(p.atk.t>6&&p.atk.n<3)p.queue=true;
   }
   // Golpe Carregado: depois do primeiro corte, continuar segurando carrega; soltar com a lâmina brilhando dispara
+  if(pressed('swap')&&!p.atk&&save.weapons.length>1){const i=save.weapons.indexOf(save.weapon);save.weapon=save.weapons[(i+1)%save.weapons.length];say(curW().n);sfx('clang');updateAbil()}
   // Arco: toque = flecha; segurar = flecha carregada que atravessa
   if(save.ab.bow){
     if(p.bowCd>0)p.bowCd--;
@@ -1042,13 +1060,14 @@ function updatePlayer(){
       p.vy=1.3;p.face=wallSide;
       if(frames%5===0)fxp.push({x:wallSide<0?p.x:p.x+p.w,y:p.y+p.h-4,vx:-wallSide*.4,vy:-.3,life:16,max:16,col:'#a89a8a',size:1});
     }
-    if(p.atk&&!p.ground&&p.vy>0&&p.atk.t<=ATK[p.atk.n].a1)p.vy*=0.6;
+    if(p.atk&&!p.ground&&p.vy>0&&p.atk.t<=curATK()[p.atk.n].a1)p.vy*=0.6;
   }
   if(p.atk){
-    const A=ATK[p.atk.n];
+    const A=curATK()[p.atk.n];
     p.atk.t++;
     if(p.atk.t===1)sfx('swing',p.atk.n);
     if(p.atk.n===3&&p.atk.t===3&&p.ground)p.vx=p.face*2.2;
+    if(A.quake&&p.atk.t===A.a0&&p.ground){for(const s of [-1,1])pshots.push({x:p.x+p.w/2+s*10-7,y:p.y+p.h-16,w:14,h:16,vx:s*3.4,life:32,hit:new Set()});shake=Math.max(shake,8);sfx('slam')}
     if(p.atk.n===4&&p.atk.t===A.a0){p.vx=p.face*3.4;shake=Math.max(shake,5);sfx('swing',3)}
     const bl=blades();
     bl.forEach((b,i)=>{const tr=P.trails[i];tr.push({x:b.x,y:b.y});if(tr.length>9)tr.shift()});
@@ -1092,7 +1111,7 @@ function eruption(){
   shake=16;hitstop=8;powerFlash=16;sfx('slam');sfx('break');
 }
 function zonesFx(x,y){for(let k=0;k<8;k++)fxp.push({x:x+(Math.random()-.5)*10,y:y-Math.random()*6,vx:(Math.random()-.5)*.5,vy:-1.5-Math.random()*2.5,life:26,max:26,col:k%2?'#ffb040':'#ff5a1a',size:2,add:true})}
-function addFury(d){if(!P.blasting&&!P.power){const was=P.fury>=1;P.fury=Math.min(1,P.fury+d*.08*(save.tech.temper?1.25:1));
+function addFury(d){if(!P.blasting&&!P.power){const was=P.fury>=1;P.fury=Math.min(1,P.fury+d*.08*(save.tech.temper?1.25:1)*curW().fury);
   if(!was&&P.fury>=1){sfx('altar');if(!hints.fury){hints.fury=1;say(touchDev?'Erupção pronta! Toque em PODER':'Erupção pronta! Aperte Q')}}}}
 function startAtk(n){P.atk={n,t:0,hit:new Set()};P.trails=[[],[]]}
 function pogo(){P.plunge=false;P.vy=-6.8;P.jumps=0;P.airDash=true;hitstop=5;shake=Math.max(shake,4)}
@@ -1110,7 +1129,7 @@ function plungeLand(){
   if(bossHittable()&&Math.abs(boss.x+boss.w/2-cx)<56&&Math.abs(boss.y+boss.h-cy)<30)hitBoss(2);
 }
 function blades(){
-  const A=ATK[P.atk.n],t=P.atk.t;
+  const A=curATK()[P.atk.n],t=P.atk.t;
   const k=Math.min(1,Math.max(0,(t-1)/(A.a1-1))),e=1-Math.pow(1-k,2);
   const ang=A.from+(A.to-A.from)*e;
   const ext=Math.sin(Math.min(1,t/A.dur)*Math.PI);
@@ -1141,7 +1160,7 @@ function bossHittable(){return boss&&boss.state!=='sleep'&&boss.state!=='dead'}
 function slashFx(x,y){const a=Math.random()*Math.PI;fxp.push({x,y,ang:a,life:9,max:9,slash:true,add:true});fxp.push({x,y,ang:a+1.6,life:7,max:7,slash:true,small:true,add:true})}
 const BITS={hop:'#e6dccb',harp:'#ff8a3a',bro:'#9a3aa8',shade:'#7fe0d0',ghoul:'#ff8a3a',spider:'#c8c0b0',hound:'#3a2a30',thing:'#6ac04a',guard:'#8a90a0',garg:'#5a5a6a',cult:'#a89a7a',shadow:'#2a1a3a',zomb:'#5a8a4a',brute:'#4a4440'};
 // golpe que passa por escudo: carregado, de queda, Erupção ou Onda
-const heavyHit=()=>P.blasting||P.plunge||(P.atk&&P.atk.n===4);
+const heavyHit=()=>P.blasting||P.plunge||(P.atk&&(P.atk.n===4||curW().heavy));
 function shieldBlock(x,y){
   burst(x,y,'#fff2d0',8,2,true);slashFx(x,y);sfx('clang');hitstop=Math.max(hitstop,3);
   if(P.kbT===0){P.vx=-P.face*2.4;P.kbT=6}
@@ -1457,7 +1476,7 @@ function bossDeath(b){
   if(b.kind==='mino'){B1=null;boss=null;setDoor(false);openEast();scene(...MEMS[0],after(()=>say('Uma passagem se abriu a leste · +20 cinzas')))}
   else if(b.kind==='medusa'){B2=null;boss=null;setDoor2(false);openSeal();setDoor7(false);scene(...MEMS[1],after(()=>say('A tranca da Fundição rachou e o leste se abriu')))}
   else if(b.kind==='clock'){B6=null;boss=null;setDoor6(false);if(bellOpen())setDoor4(false);scene(...MEMS[3],after(()=>say(bellOpen()?'A porta do sino se abriu':'Mais uma brasa acesa ('+emberCount()+' de 5)')))}
-  else if(b.kind==='banner'){B7=null;boss=null;setDoor8(false);openPort();ents.forEach(e=>{if(e.summoned)e.dead=true});if(bellOpen())setDoor4(false);scene(...MEMS[4],after(()=>say(bellOpen()?'A porta do sino se abriu':'Mais uma brasa acesa ('+emberCount()+' de 5)')))}
+  else if(b.kind==='banner'){B7=null;boss=null;setDoor8(false);openPort();ents.forEach(e=>{if(e.summoned)e.dead=true});if(bellOpen())setDoor4(false);scene(...MEMS[4],after(()=>{say(bellOpen()?'A porta do sino se abriu':'Mais uma brasa acesa ('+emberCount()+' de 5)');giveWeapon('spear')}))}
   else if(b.kind==='weaver'){B8=null;boss=null;setDoor9(false);save.maxHp++;P.hp=maxHp();if(!save.taken.includes('pg4'))save.taken.push('pg4');setTrack('explore');updateAbil();persist();
     showMsg({n:'Pergaminho: Lâmina Temperada',d:'No fundo da teia havia um pergaminho da guarda. Leve ao Damião, nas Ruínas. Junto dele, um Coração de Brasa: sua vida máxima aumentou em 1. (+20 cinzas)'})}
   else if(b.kind==='widow'){B10=null;boss=null;setDoor10(false);setTrack('explore');scene(...MEMS[5],after(()=>giveCharm('lanterna')))}
@@ -1696,7 +1715,7 @@ function buyShop(id){
 /* ===== Nova Noite+ ===== */
 function newNightPlus(){
   const o=save,s=freshSave();
-  for(const k of ['ab','tech','charms','equip','slots','swordLv','flaskMax','flaskLv','maxHp','bronze','ash','taken','chests'])s[k]=JSON.parse(JSON.stringify(o[k]));
+  for(const k of ['weapons','weapon','ab','tech','charms','equip','slots','swordLv','flaskMax','flaskLv','maxHp','bronze','ash','taken','chests'])s[k]=JSON.parse(JSON.stringify(o[k]));
   s.flags={ward:o.flags.ward};s.ng=(o.ng||0)+1;
   save=s;seen=new Uint8Array(W*H);hints={};frames=0;reset();updateAbil();persist();
   scene('Nova Noite+ '+s.ng,['O sol nasceu, e mesmo assim Teo acorda na cinza. A montanha guardou um pedaço da noite.','Os mortos voltam mais fortes. Mas Teo lembra de tudo o que aprendeu.'],()=>say('Ruínas de Olimpo'));
@@ -1922,6 +1941,7 @@ function updateBoss(){
   const b=boss;if(!b)return;
   if(b.state==='dead'){bossDeath(b);return}
   if(b.flash>0)b.flash--;
+  if(b.state.endsWith('W')&&b.t===WARN_T+1)sfx('warn');
   ({mino:updMino,medusa:updMedusa,cerb:updCerb,ares:updAres,beast:updBeast,clock:updClock,banner:updBanner,weaver:updWeaver,heart:updHeart,widow:updWidow,colossus:updColossus,spirit:updSpirit,jailer:updJailer,statue:updStatue,queen:updQueen,tornado:updTornado,priest:updPriest})[b.kind](b);
 }
 /* ===== chefes do leste ===== */
@@ -2323,6 +2343,7 @@ function updateItems(){
     }
     if(!overlap(it,P))return true;
     if(it.id==='arw'){P.arrows=Math.min(save.arrowsMax,P.arrows+3);sfx('blip');return false}
+    if(it.id.startsWith('w_')){save.taken.push(it.id);burst(it.x+5,it.y+6,'#d0b0ff',24,2.5,true);giveWeapon(it.id.slice(2));return false}
     if(it.id.startsWith('eco')){save.taken.push(it.id);sfx('altar');burst(it.x+5,it.y+6,'#9ad8ff',20,2,true);persist();readEco(it.id);return false}
     if(it.id==='orb'){P.hp=Math.min(maxHp(),P.hp+1);burst(it.x+3,it.y+3,'#ff6a5a',6,1.5,true);sfx('orb');return false}
     sfx('pickup');
@@ -2908,7 +2929,7 @@ function heroPose(){
   if(P.stone>0){fr=0}
   else if(P.power>0){k='kJump';fr=4}
   else if(P.kbT>0){k='kJump';fr=0}
-  else if(P.atk){const A=ATK[P.atk.n],n=nFrames('kAtk');k='kAtk';fr=Math.min(n-1,Math.floor(P.atk.t/A.dur*n));if(A.spin){fr=2;if((P.atk.t>>2)%2)face=-face}}
+  else if(P.atk){const A=curATK()[P.atk.n],n=nFrames('kAtk');k='kAtk';fr=Math.min(n-1,Math.floor(P.atk.t/A.dur*n));if(A.spin){fr=2;if((P.atk.t>>2)%2)face=-face}}
   else if(P.plunge){k='kJump';fr=4}
   else if(P.dashT>0){k='kRun';fr=1}
   else if(!P.ground){k='kJump';fr=P.vy<-3?1:P.vy<0?2:P.vy<2?3:4}
@@ -2930,7 +2951,7 @@ function drawHeroSprite(){
   if(st){fr=0}
   else if(P.power>0){name='crouch';fr=0}
   else if(P.kbT>0){name='hurt';fr=0}
-  else if(P.atk){const A=ATK[P.atk.n];name='attack';fr=Math.min(4,Math.floor(P.atk.t/3));if(A.spin){fr=3;if((P.atk.t>>2)%2)face=-face}}
+  else if(P.atk){const A=curATK()[P.atk.n];name='attack';fr=Math.min(4,Math.floor(P.atk.t/3));if(A.spin){fr=3;if((P.atk.t>>2)%2)face=-face}}
   else if(P.plunge){name='jump';fr=3}
   else if(P.dashT>0){name='run';fr=4}
   else if(!P.ground){name='jump';fr=P.vy<-2?0:P.vy<1?1:2+((frames>>3)%2)}
@@ -3088,6 +3109,8 @@ function drawItems(){
       ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle='rgba(255,140,40,.35)';ctx.fillRect(x,y,6,6);ctx.restore();continue}
     const bob=Math.round(Math.sin(frames*.08+it.x)*2),x=it.x,y=it.y+bob;
     if(it.id.startsWith('eco')){drawEco(it,x,y);continue}
+    if(it.id.startsWith('w_')){ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=`rgba(180,120,255,${.3+.15*Math.sin(frames*.1)})`;ctx.fillRect(x-4,y-4,18,20);ctx.restore();
+      ctx.fillStyle='#6a4a2a';ctx.fillRect(x+4,y,2,14);ctx.strokeStyle='#d8d0f0';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x+10,y+3,6,Math.PI*.9,Math.PI*1.9);ctx.stroke();continue}
     if(it.id.startsWith('pg')){ctx.fillStyle='#e8dcc0';ctx.fillRect(x+1,y+2,8,9);ctx.fillStyle='#b8a888';ctx.fillRect(x+1,y+2,8,1);ctx.fillRect(x+1,y+10,8,1);
       ctx.fillStyle='#8a5a22';ctx.fillRect(x,y+1,10,2);ctx.fillRect(x,y+10,10,2);ctx.fillStyle='#7a1814';ctx.fillRect(x+3,y+5,4,1);ctx.fillRect(x+3,y+7,3,1);
       ctx.fillStyle='#c8322a';ctx.fillRect(x+7,y+6,2,2)}
@@ -3159,7 +3182,24 @@ function bossOverride(b){
   if(b.kind==='mino'&&b.state==='windup'&&(frames>>2)%2)return'#ff6a4a';
   return null;
 }
-function bossVariant(b){return bossOverride(b)==='#ffffff'?'white':null}
+function bossVariant(b){return bossOverride(b)==='#ffffff'?'white':(bossWarnOn(b)&&(frames>>1)%2?'crimson':null)}
+// aviso rápido: só nos últimos ~0,2 s antes do golpe (dá para reagir, mas não sobra tempo)
+const WARN_T=12;
+function bossWarnOn(b){return !!(b&&b===boss&&b.state&&b.state.endsWith('W')&&b.t>0&&b.t<=WARN_T)}
+function drawBossWarn(){
+  const b=boss;if(!bossWarnOn(b))return;
+  const x=b.x+b.w/2,y=b.y-14,blink=(frames>>1)%2;
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=`rgba(255,60,30,${.45+.45*blink})`;ctx.lineWidth=2;
+  ctx.beginPath();ctx.ellipse(x,b.y+b.h,b.w/2+10,4,0,0,7);ctx.stroke();ctx.restore();
+  if(blink){ctx.fillStyle='#ff3a1a';ctx.fillRect(Math.round(x)-2,Math.round(y)-10,5,9);ctx.fillRect(Math.round(x)-2,Math.round(y)+1,5,4);
+    ctx.fillStyle='#fff2d0';ctx.fillRect(Math.round(x)-1,Math.round(y)-9,3,7);ctx.fillRect(Math.round(x)-1,Math.round(y)+2,3,2)}
+}
+function drawBossWarnHud(){
+  const b=boss;if(!bossWarnOn(b)||!((frames>>1)%2))return;
+  const sx=b.x+b.w/2-cam.x,sy=b.y+b.h/2-cam.y;if(sx>-10&&sx<VW+10&&sy>-10&&sy<VH+10)return;
+  const ex=Math.max(10,Math.min(VW-10,sx)),ey=Math.max(30,Math.min(VH-30,sy)),a=Math.atan2(sy-ey,sx-ex);
+  ctx.fillStyle='#ff3a1a';ctx.beginPath();ctx.moveTo(ex+Math.cos(a)*9,ey+Math.sin(a)*9);ctx.lineTo(ex+Math.cos(a+2.4)*7,ey+Math.sin(a+2.4)*7);ctx.lineTo(ex+Math.cos(a-2.4)*7,ey+Math.sin(a-2.4)*7);ctx.fill();
+}
 function stars(b){if(OVR)return;ctx.fillStyle='#ffde5a';for(let i=0;i<3;i++){const a=frames*.12+i*2.1;ctx.fillRect(Math.round(b.x+b.w/2+Math.cos(a)*14),Math.round(b.y-6+Math.sin(a)*3),2,2)}}
 function drawBeast(b){
   if(b.state==='sleep'&&!seen[50*W+60])return;if(!inView(b.x,b.y,90))return;
@@ -3395,12 +3435,21 @@ function drawChain(x0,y0,x1,y1){
   for(let i=1;i<n;i++){const t=i/n,sag=Math.sin(t*Math.PI)*2;
     ctx.fillStyle=i%2?'#7d828c':'#b4b9c2';ctx.fillRect(Math.round(x0+(x1-x0)*t),Math.round(y0+(y1-y0)*t+sag),2,i%2?1:2)}
 }
+function drawWeaponTip(b){
+  const w=save.weapon;if(w==='sword'||OVR)return;
+  ctx.save();ctx.translate(b.x,b.y);ctx.rotate(P.face>0?b.ang:Math.PI-b.ang);
+  if(w==='spear'){ctx.fillStyle='#6a4a2a';ctx.fillRect(-22,-1,22,2);ctx.fillStyle='#d8dce4';ctx.beginPath();ctx.moveTo(0,-3);ctx.lineTo(9,0);ctx.lineTo(0,3);ctx.fill();ctx.fillStyle='#ffffff';ctx.fillRect(1,-1,5,1)}
+  else if(w==='scythe'){ctx.fillStyle='#4a3a2a';ctx.fillRect(-16,-1,16,2);ctx.strokeStyle='#d8d0f0';ctx.lineWidth=2;ctx.beginPath();ctx.arc(-2,-8,9,-.2,Math.PI*.65);ctx.stroke();ctx.strokeStyle='#ffffff';ctx.lineWidth=1;ctx.beginPath();ctx.arc(-2,-8,8,0,Math.PI*.4);ctx.stroke()}
+  else if(w==='hammer'){ctx.fillStyle='#5a3a1a';ctx.fillRect(-14,-1,14,2);ctx.fillStyle='#3a3430';ctx.fillRect(-2,-6,9,12);ctx.fillStyle='#c8902f';ctx.fillRect(-2,-6,9,2);ctx.fillRect(-2,4,9,2);ctx.fillStyle='#6a6460';ctx.fillRect(5,-5,2,10)}
+  ctx.restore();
+}
 function drawTrails(){
+  if(P.atk&&state!=='dead')for(const b of blades())drawWeaponTip(b);
   ctx.globalCompositeOperation='lighter';
   for(const tr of P.trails){
     for(let i=1;i<tr.length;i++){
       const a=i/tr.length;
-      ctx.strokeStyle=`rgba(255,${110+Math.round(a*110)},40,${a*.85})`;ctx.lineWidth=1+a*5;ctx.lineCap='round';
+      const tc=curW().trail;ctx.strokeStyle=`rgba(${tc[0]},${Math.min(255,tc[1]-30+Math.round(a*110))},${tc[2]},${a*.85})`;ctx.lineWidth=1+a*5;ctx.lineCap='round';
       ctx.beginPath();ctx.moveTo(tr[i-1].x,tr[i-1].y);ctx.lineTo(tr[i].x,tr[i].y);ctx.stroke();
     }
     if(tr.length>2){ctx.strokeStyle='rgba(255,250,220,.9)';ctx.lineWidth=1;ctx.beginPath();const s=tr.length-3;ctx.moveTo(tr[s].x,tr[s].y);for(let i=s+1;i<tr.length;i++)ctx.lineTo(tr[i].x,tr[i].y);ctx.stroke()}
@@ -3451,7 +3500,7 @@ function drawHero(){
       ctx.strokeStyle=i===0?SK:SKD;ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(hx,hy);ctx.stroke();
       drawChain(hx,hy,b.x,b.y);drawBlade(b.x,b.y,b.ang,f);
     });
-    if(!ATK[P.atk.n].spin){ctx.strokeStyle=SKD;ctx.beginPath();ctx.moveTo(sb.x,sb.y);ctx.lineTo(mx(1),Y+12+bob);ctx.stroke()}
+    if(!curATK()[P.atk.n].spin){ctx.strokeStyle=SKD;ctx.beginPath();ctx.moveTo(sb.x,sb.y);ctx.lineTo(mx(1),Y+12+bob);ctx.stroke()}
   }else if(P.plunge){
     ctx.lineWidth=2;ctx.strokeStyle=SK;
     ctx.beginPath();ctx.moveTo(sh.x,sh.y);ctx.lineTo(mx(7),Y+16);ctx.stroke();
@@ -3674,7 +3723,7 @@ function render(){
   const cx=snap(cam.x+sx),cy=snap(cam.y+sy);
   drawBg(cx,cy);
   ctx.save();ctx.translate(-cx,-cy);
-  drawWorldBg(cx);drawCrystals();drawTiles(cx,cy);drawBraziers();drawStatues();drawChests();drawTraps();drawTargets();drawSunkColumns();drawWatchers();drawThrone();outlined(drawNpcs);drawItems();outlined(drawEnemies);outlined(drawBosses);drawWaves();drawZones();drawShots();
+  drawWorldBg(cx);drawCrystals();drawTiles(cx,cy);drawBraziers();drawStatues();drawChests();drawTraps();drawTargets();drawSunkColumns();drawWatchers();drawThrone();outlined(drawNpcs);drawItems();outlined(drawEnemies);outlined(drawBosses);drawBossWarn();drawWaves();drawZones();drawShots();
   drawGhosts();drawParticles(false);if(state!=='dead')drawTrails();outlined(drawHero);
   ctx.restore();
   drawLighting(cx,cy);
@@ -3682,7 +3731,7 @@ function render(){
   drawAtmosphere(cx);
   ctx.save();ctx.translate(-cx,-cy);drawParticles(true);ctx.restore();
   drawVignette();
-  drawHud();
+  drawHud();drawBossWarnHud();
   if(showMap)drawMap();
 }
 
@@ -3746,6 +3795,7 @@ const SFX={
   stone:t=>{nz(t,.5,.6,1200,200,'lowpass',AU.sfxBus);osc(140,60,t,.4,'square',.15,AU.sfxBus)},
   die:t=>{osc(330,45,t,1,'sawtooth',.2,AU.sfxBus);osc(220,30,t+.1,1,'square',.1,AU.sfxBus)},
   tick:t=>osc(1900,null,t,.025,'square',.03,AU.sfxBus),
+  warn:t=>{osc(980,1460,t,.07,'square',.07,AU.sfxBus);osc(1960,null,t+.04,.05,'square',.04,AU.sfxBus)},
   bossdie:t=>{osc(140,30,t,1.6,'sawtooth',.3,AU.sfxBus,.02);nz(t,1.4,.4,800,60,'lowpass',AU.sfxBus)},
 };
 function sfx(n,a){if(!AU.ctx||!AU.sfxOn||AU.ctx.state!=='running')return;try{SFX[n](AU.ctx.currentTime,a)}catch(_){}}
@@ -3832,7 +3882,7 @@ function victory(){
   <div class="row"><button class="btn" data-go="ngplus">Nova Noite+</button><button class="ghostbtn" data-go="start">Começar do zero</button></div>`);
 }
 function updateAbil(){
-  const a=['<b>Espada</b>','<b>Golpe de queda</b>','<b>Erupção</b>'];if(save.ab.jump)a.push('<b>Pulo duplo</b>');if(save.ab.dash)a.push('<b>Investida</b>');if(save.ab.wall)a.push('<b>Salto na parede</b>');if(save.ab.beast)a.push('<b>Erupção maior</b>');if(save.ab.bow)a.push('<b>Arco</b>');if(save.ab.fire)a.push('<b>Flechas de fogo</b>');if(save.ab.glide)a.push('<b>Planar</b>');
+  const a=['<b>'+curW().n+'</b>'+(save.weapons.length>1?' (T troca)':''),'<b>Golpe de queda</b>','<b>Erupção</b>'];if(save.ab.jump)a.push('<b>Pulo duplo</b>');if(save.ab.dash)a.push('<b>Investida</b>');if(save.ab.wall)a.push('<b>Salto na parede</b>');if(save.ab.beast)a.push('<b>Erupção maior</b>');if(save.ab.bow)a.push('<b>Arco</b>');if(save.ab.fire)a.push('<b>Flechas de fogo</b>');if(save.ab.glide)a.push('<b>Planar</b>');
   for(const t of TECHS)if(save.tech[t.id])a.push('<b>'+t.n+'</b>');
   if(save.swordLv)a.push('<b>Espada +'+save.swordLv+'</b>');a.push('<b>'+save.flaskMax+' frascos</b>');
   if(save.equip.length)a.push('Amuletos: '+save.equip.map(id=>'<b>'+CHARMS[id].n+'</b>').join(', '));if(save.ng)a.push('<b>Noite+ '+save.ng+'</b>');
@@ -3884,7 +3934,7 @@ const ECOS=[
   {id:'eco11',x:190,y:66,t:'"Se o Coração cair e o Kalas continuar de pé, ele acha outro desesperado e tudo recomeça. Já aconteceu. Por isso você está lendo isto." — T.'},
   {id:'eco12',x:15,y:92,t:'"Último bilhete. Se você chegou aqui com todos os outros, desta vez é diferente. Derrube o Kalas. Depois escreva o seu nome no livro da Mira. Com a sua própria mão." — T.'},
 ];
-ITEM_SPAWNS.push(...ECOS.map(e=>({id:e.id,x:e.x,y:e.y})));
+ITEM_SPAWNS.push(...ECOS.map(e=>({id:e.id,x:e.x,y:e.y})),{id:'w_scythe',x:155,y:32});
 const ecoCount=()=>ECOS.filter(e=>save.taken.includes(e.id)).length;
 function readEco(id){
   const i=ECOS.findIndex(e=>e.id===id),n=ecoCount();

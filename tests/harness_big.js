@@ -120,7 +120,7 @@
   P.atk={n:4,t:10,hit:new Set()};hitBoss(3);ok(B7.state==='stun'&&B7.hp<lh,'golpe carregado quebra o escudo de Lúcio');P.atk=null;
   B7.guard=false;B7.hp=1;hitBoss(5);for(let i=0;i<130&&state==='play';i++)step();
   ok(state==='scene'&&SC.title.includes('juramento'),'vencer Lúcio mostra a memória do juramento');finishScene();
-  ok(tile(240,20)==='.'&&save.boss7Dead,'pátio reabre');
+  if(state==='msg'){state='play';scr.hidden=true}ok(tile(240,20)==='.'&&save.boss7Dead,'pátio reabre');
   ok(tile(164,35)==='S','porta do sino continua selada sem os cães');
 
   place(250,54);run(5);ok(B8&&B8.state!=='sleep','a Tecelã acorda');
@@ -141,7 +141,7 @@
   run(10);ok(B9.state!=='sleep','o Coração acorda');
   bossTest(()=>B9,null,['rainW','pillarW','volleyW','slamW','stun'],'Coração da Montanha');
   // dá para acertar o coração pulando? (com ele no ponto mais alto do voo)
-  B9.state='stun';B9.t=9999;B9.y=46*16-14;B9.x=164*16;const hh=B9.hp;P.x=B9.x+5;P.y=54*16-22;P.vy=0;P.inv=999999;run(2);
+  save.weapon='sword';B9.state='stun';B9.t=9999;B9.y=46*16-14;B9.x=164*16;const hh=B9.hp;P.x=B9.x+5;P.y=54*16-22;P.vy=0;P.inv=999999;run(2);
   keys.jump=true;tapped.jump=true;run(1);run(10);tapped.jump=true;run(3);keys.jump=false;keys.attack=true;tapped.attack=true;run(1);keys.attack=false;run(12);
   ok(B9.hp<hh,'pulando dá para acertar o coração no alto ('+hh+'→'+B9.hp+')');
   B9.hp=1;B9.state='stun';hitBoss(5);for(let i=0;i<130&&state==='play';i++)step();
