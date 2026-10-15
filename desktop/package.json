@@ -1,0 +1,24 @@
+{
+  "name": "cinzas-do-olimpo",
+  "productName": "Cinzas do Olimpo",
+  "version": "1.0.0",
+  "description": "Metroidvania 2D: 36 áreas, 17 chefes, espada e arco.",
+  "author": "Vinicius Capeto",
+  "main": "main.js",
+  "scripts": {
+    "prepare-game": "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force game | Out-Null; Copy-Item ..\\index.html,..\\manifest.json,..\\icon-192.png,..\\icon-512.png game -Force\"",
+    "start": "npm run prepare-game && electron .",
+    "build": "npm run prepare-game && electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "io.github.viniciuscapeto.cinzasdoolimpo",
+    "productName": "Cinzas do Olimpo",
+    "files": ["main.js", "game/**"],
+    "directories": { "output": "dist" },
+    "win": { "target": "portable", "icon": "game/icon-512.png" }
+  }
+}
