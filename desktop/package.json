@@ -11,14 +11,22 @@
     "build": "npm run prepare-game && electron-builder --win portable"
   },
   "devDependencies": {
-    "electron": "^33.2.0",
-    "electron-builder": "^25.1.8"
+    "electron": "^44.7.2",
+    "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "io.github.viniciuscapeto.cinzasdoolimpo",
     "productName": "Cinzas do Olimpo",
-    "files": ["main.js", "game/**"],
-    "directories": { "output": "dist" },
-    "win": { "target": "portable", "icon": "game/icon-512.png" }
+    "files": [
+      "main.js",
+      "game/**"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "game/icon-512.png"
+    }
   }
 }
