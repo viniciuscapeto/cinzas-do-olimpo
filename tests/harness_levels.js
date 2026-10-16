@@ -10,7 +10,7 @@
  tap('shoot');ok(P.knives===KNIFE_MAX-1&&pshots.some(s=>s.kind==='knife'),'tecla de tiro lança uma adaga');
  run(30);ok(e.hp<h0,'adaga machuca o inimigo');
  P.knives=0;banner.t=0;run(20);tap('shoot');ok(banner.txt.includes('Sem adagas'),'sem adagas avisa');
- run(KNIFE_REGEN+2);ok(P.knives>=1,'adagas voltam sozinhas');
+ run(400);ok(P.knives===0,'adagas não voltam sozinhas com o tempo');
  // com o arco, as adagas só saem quando as flechas acabam
  save.ab.bow=true;save.arrowsMax=10;P.arrows=10;P.knives=KNIFE_MAX;run(15);keys.shoot=true;run(3);keys.shoot=false;run(2);ok(P.arrows===9&&P.knives===KNIFE_MAX,'com flechas, atira flecha');
  P.arrows=0;run(15);tap('shoot');ok(P.knives===KNIFE_MAX-1,'sem flechas, lança adaga');

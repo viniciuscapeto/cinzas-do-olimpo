@@ -19,7 +19,7 @@ Metroidvania 2D em pixel art, feito para rodar direto no navegador: **50 áreas,
 | Mover | ← → ou A D | ◀ ▶ |
 | Pular (segure caindo para planar) | Espaço, ↑, W ou Z | Pular |
 | Espada (3 golpes = giro; segure = golpe carregado) | J ou X | Atacar |
-| Tiro: adagas (achadas nas Ruínas, voltam sozinhas) ou arco (segure = flecha carregada) | I ou V | Tiro |
+| Tiro: adagas (achadas nas Ruínas) ou arco (segure = flecha carregada). Munição volta batendo de perto: 1 adaga a cada 4 golpes, 1 flecha a cada 7 (combo 10+ conta em dobro) | I ou V | Tiro |
 | Trocar de arma (Espada, Lança, Foice, Martelo, Pá) | T | Arma |
 | Investida | K, C ou Shift | Invest. |
 | Erupção (barra cheia) / Onda (1/3 da barra) | Q | Poder |

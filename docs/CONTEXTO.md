@@ -14,7 +14,7 @@ Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução l�
 | Áreas com nome | 50 |
 | Chefes | 23 (8 obrigatórios + 11 opcionais + 4 do Ato II) |
 | Armas corpo a corpo | 5: Espada, Lança, Foice, Martelo, Pá de Dimas |
-| Armas de tiro | Adagas do Coveiro (Ruínas, plataforma em x15 y18; 5 adagas que voltam sozinhas) e Arco (flecha normal e carregada; flechas de fogo depois). Com o arco, as adagas saem quando as flechas acabam |
+| Armas de tiro | Adagas do Coveiro (Ruínas, plataforma em x15 y18; até 5) e Arco (flecha normal e carregada; flechas de fogo depois). Com o arco, as adagas saem quando as flechas acabam. Munição NÃO volta com o tempo nem no altar: `meleeCharge()` dá 1 adaga a cada `KNIFE_HITS`=4 golpes de perto que acertam e 1 flecha a cada `ARROW_HITS`=7 (Aljava Encantada: 4; combo 10+ conta em dobro). O altar só garante `ALTAR_MIN_ARROWS`=3 flechas (olhos de bronze). Munição fica em `save.ammo` |
 | Níveis | 1 a 30. Inimigos e chefes dão experiência (`gainXp`, `xpNeed`, `BOSS_XP`); cada nível dá +4% de dano e a cada 4 níveis +1 de vida máxima |
 | Dificuldade dos inimigos comuns | +35% de vida (`FOE_HP`), recuperação mais curta entre golpes, menos orbes de cura e 12% de chance de nascer **furioso** (`ELITE_P`: aura vermelha, +80% de vida, tira 2 de vida, dobro de experiência). Chefes não mudaram |
 | Técnicas de espada | 4 (pergaminho + cinzas, com o Damião) |
@@ -115,6 +115,7 @@ Os inimigos do sonho são os comuns em tom violeta, com mais vida e experiência
 | `tools/build_app.ps1` | `-Src src\cinzas.html -Out .` gera o PWA (troque a versão do cache `cinzas-vN` a cada release) |
 | `tools/gem_cut.ps1` | recorta folha de sprites (fundo magenta/roxo, JPEG ok): `-In folha.jpg -Out pasta -Rows N [-Cols N]` |
 | `tools/gem_build.ps1` | reduz os recortes ao tamanho do jogo, alinha pelos pés e gera `gem_sprites.js` (bloco `Object.assign(SPRITE_DATA,...)`) |
+| `tools/weapon_build.ps1` | armas do Gemini: lê `Documents\Cinzas do Olimpo\sprite-gemini\armas\{espada,lanca,foice,martelo,pa,arco}.png/jpg` (fundo magenta), reduz e grava `w_<arma>` entre `// ARMAS-INICIO` e `// ARMAS-FIM` no `src/cinzas.html`. Arma que não tiver arquivo continua desenhada em pixels |
 | `tools/swapfuncs.ps1` | troca funções inteiras no HTML a partir de um arquivo com blocos `//@@nomeDaFuncao` |
 | `tests/` | testes headless em Node (`run_tests.ps1 <suite>.js`) |
 | `art/` | folhas originais do Gemini e o `GUIA-SPRITES.md` com o prompt-base para gerar novos sprites |
@@ -155,6 +156,8 @@ Os inimigos do sonho são os comuns em tom violeta, com mais vida e experiência
 | Inimigo | crie um tipo em `mkEnemy` (tamanho e vida), a IA em `updateEnemies`, o desenho em `drawNewEnemy` e um spawn em `ENEMY_SPAWNS` |
 | Chefe | `mkX()`, `updX(b)` (máquina de estados; estados que terminam em `W` são preparação e ganham o aviso automático), desenho, linha em `reset()`, `boss=` em `step`, chaves em `hitBoss` / `updateBoss` / `drawBosses` / `bossDeath`, e `bossTrack` para a música |
 | Área | carve em `buildWorld`, nome em `zoneAt` e `ZONES`, paleta em `palKey` / `PALS`, fundo em `drawSubBg` (ou similar), altar em `STATUES` |
+| Arma na mão | o herói usa as folhas `k*` (com a espada desenhada) só para a espada; com outra arma ou com o arco usa `u*` (mesmo cavaleiro sem a espada) e `drawHeldMelee` / `drawWeapon` desenham a arma na mão (`HERO_HAND` = mão por quadro, `WEAPON_GEOM` = comprimento, pegada e ângulo de descanso). `heldWeapon()` diz o que está na mão (arco enquanto mira, logo depois de atirar e ao ganhar) |
+| Testar áreas | modo criador: abra o jogo com `?criador` no endereço (ou clique 5 vezes no logo do título) e use "Modo criador: tudo liberado". `creatorSave()` monta o save; o save normal vai para `cinzas-save-backup` e volta com "Voltar ao meu save" |
 | Sprite novo | gere no Gemini com o prompt de `art/GUIA-SPRITES.md`, rode `gem_cut` + `gem_build` e cole o bloco no lugar do bloco do Gemini |
 
 ---
@@ -176,6 +179,9 @@ Os testes rodam o jogo inteiro no Node, sem navegador (o canvas é falso), e sim
 | `harness_extra` | áreas opcionais, Glutão e Autômato, itens raros, conquistas, save do criador, revanche contra os 23 chefes, arena sem fim e Noite+ |
 | `harness_dream` | Ato II: região lacrada, inimigos, fendas, os 4 chefes, saídas, lembranças, objetivo, save antigo, pá e Passo do Eco |
 | `harness_fx` | animação de morte, sangue na parede e na tela, poeira, objetivo, pensamentos, capítulos e cenas |
+| `harness_story` | abertura com a história de Teo, Mira, inscrição, Corcel, Ilía, rio, três cães, porta do sino com 5 brasas, Andros (2 fases), Coração da Montanha e final |
+| `harness_creator` | modo criador escondido, save com tudo liberado (vida, ecos, armas, técnicas, amuletos, forja, chefes, altares, mapa), viagem por todos os altares e volta ao save normal |
+| `harness_arms` | munição que só volta batendo de perto, altar com 3 flechas, munição no save, arma na mão ao pegar/trocar, arco na mão, desenho de todas as armas |
 | `harness_levels` | adagas, níveis, inimigos mais fortes e furiosos, boatos do Submundo, sangue, combo e mapa da viagem |
 
 **Dica:** ver o jogo de verdade sem abrir janela. Rode o Edge headless com perfil separado:
