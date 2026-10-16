@@ -56,6 +56,12 @@ Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução l�
 
 **Mortes e golpes:** cada inimigo se desfaz no material dele (`GORE`: sangue, gosma, osso, pedra, névoa ou brasa). As gotas caem e viram manchas no chão (`bleed`, `goreDeath`, `stains`). Cada golpe mostra o dano (x10) e soma no contador "N HITS" (`combo`, `countHit`, `drawCombo`), que zera depois de ~2,5 s sem acertar ou ao apanhar.
 
+**Animação de morte:** o inimigo vira um corpo (`corpses`, `mkCorpse`, `updateCorpses`, `drawCorpse`, que reaproveita `drawEnemy`). O corpo é arremessado, tomba, sangra até formar uma poça e queima até virar cinza; osso e pedra desmoronam, e fantasmas sobem e somem. O sangue também mancha as paredes, e quando Teo apanha a tela leva respingos que escorrem (`splats`).
+
+**Visual:** tom de cor escuro (`drawGrade`, mais avermelhado no Submundo), granulação de filme nos gráficos nítidos e vinheta mais forte. Investida com onda e riscos de velocidade, poeira na aterrissagem (`landFx`), faíscas e marcas ao deslizar na parede.
+
+**História:** cenas em estilo cinema (faixas pretas, câmera passeando, texto letra por letra, `finishType`) e cartões de capítulo (`CHAPTERS`, numerados na ordem em que aparecem, em `save.flags.chaps`). Objetivo atual no canto da tela e no mapa (`objective`), e pensamentos do Teo na primeira visita a cada área (`THOUGHTS`).
+
 **Viagem:** o menu do altar mostra um mapa do que já foi visto; passar o mouse ou tocar num altar marca o destino (`travelMenu(sel)`, `drawTravelMap`) e o botão "Viajar para…" confirma.
 
 **Pistas do Submundo:** fumaça nos chãos rachados, falas dos NPCs, boatos nos altares (`RUMORS` / `altarRumor`, até descer abaixo de y=56, que marca `save.flags.under`) e chãos rachados piscando no mapa.
@@ -134,6 +140,7 @@ Os testes rodam o jogo inteiro no Node, sem navegador (o canvas é falso), e sim
 | `harness_sub` | Submundo inteiro: caminhos, arco, olhos de bronze, planar, 6 chefes, NPCs, finais |
 | `harness_hints` | pistas para achar o Submundo |
 | `harness_weapons` | armas novas e aviso dos chefes |
+| `harness_fx` | animação de morte, sangue na parede e na tela, poeira, objetivo, pensamentos, capítulos e cenas |
 | `harness_levels` | adagas, níveis, inimigos mais fortes e furiosos, boatos do Submundo, sangue, combo e mapa da viagem |
 
 **Dica:** ver o jogo de verdade sem abrir janela. Rode o Edge headless com perfil separado:

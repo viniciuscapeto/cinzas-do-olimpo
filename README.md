@@ -58,7 +58,7 @@ Precisa do Node 18 ou mais novo.
 powershell -File tests\run_tests.ps1 harness_sub.js
 ```
 
-As suítes são `harness_big`, `harness_v3`, `harness_gem`, `harness_ward`, `harness_clock`, `harness_sub`, `harness_hints`, `harness_weapons` e `harness_levels`.
+As suítes são `harness_big`, `harness_v3`, `harness_gem`, `harness_ward`, `harness_clock`, `harness_sub`, `harness_hints`, `harness_weapons`, `harness_levels` e `harness_fx`.
 
 ### Gerar o executável do Windows
 
