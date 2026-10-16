@@ -1,6 +1,6 @@
 # Cinzas do Olimpo
 
-Metroidvania 2D em pixel art, feito para rodar direto no navegador: **36 áreas, 17 chefes, 4 armas de corpo a corpo e um arco, forja, amuletos e um mistério com três finais.**
+Metroidvania 2D em pixel art, feito para rodar direto no navegador: **36 áreas, 17 chefes, 4 armas de corpo a corpo, adagas e arco, níveis de experiência, forja, amuletos e um mistério com três finais.**
 
 > Há dez anos o sol não nasce na cidade de Olimpo. Toda noite o sino toca três vezes e os mortos se levantam da cinza.
 > Você é Teo, o último coveiro, e esta noite vai descobrir quem toca o sino. No bolso, um bilhete com a sua própria letra.
@@ -19,7 +19,7 @@ Metroidvania 2D em pixel art, feito para rodar direto no navegador: **36 áreas,
 | Mover | ← → ou A D | ◀ ▶ |
 | Pular (segure caindo para planar) | Espaço, ↑, W ou Z | Pular |
 | Espada (3 golpes = giro; segure = golpe carregado) | J ou X | Atacar |
-| Arco (segure = flecha carregada) | I ou V | Arco |
+| Tiro: adagas (achadas nas Ruínas, voltam sozinhas) ou arco (segure = flecha carregada) | I ou V | Tiro |
 | Trocar de arma (Espada, Lança, Foice, Martelo) | T | Arma |
 | Investida | K, C ou Shift | Invest. |
 | Erupção (barra cheia) / Onda (1/3 da barra) | Q | Poder |
@@ -58,7 +58,7 @@ Precisa do Node 18 ou mais novo.
 powershell -File tests\run_tests.ps1 harness_sub.js
 ```
 
-As suítes são `harness_big`, `harness_v3`, `harness_gem`, `harness_ward`, `harness_clock`, `harness_sub` e `harness_hints`.
+As suítes são `harness_big`, `harness_v3`, `harness_gem`, `harness_ward`, `harness_clock`, `harness_sub`, `harness_hints`, `harness_weapons` e `harness_levels`.
 
 ### Gerar o executável do Windows
 

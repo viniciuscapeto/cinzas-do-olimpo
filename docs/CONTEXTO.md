@@ -14,7 +14,9 @@ Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução l�
 | Áreas com nome | 36 |
 | Chefes | 17 (8 obrigatórios + 9 opcionais) |
 | Armas corpo a corpo | 4: Espada, Lança, Foice, Martelo |
-| Arma de tiro | Arco (flecha normal e carregada; flechas de fogo depois) |
+| Armas de tiro | Adagas do Coveiro (Ruínas, plataforma em x15 y18; 5 adagas que voltam sozinhas) e Arco (flecha normal e carregada; flechas de fogo depois). Com o arco, as adagas saem quando as flechas acabam |
+| Níveis | 1 a 30. Inimigos e chefes dão experiência (`gainXp`, `xpNeed`, `BOSS_XP`); cada nível dá +4% de dano e a cada 4 níveis +1 de vida máxima |
+| Dificuldade dos inimigos comuns | +35% de vida (`FOE_HP`), recuperação mais curta entre golpes, menos orbes de cura e 12% de chance de nascer **furioso** (`ELITE_P`: aura vermelha, +80% de vida, tira 2 de vida, dobro de experiência). Chefes não mudaram |
 | Técnicas de espada | 4 (pergaminho + cinzas, com o Damião) |
 | Amuletos | 14 (espaços 3 → 5) |
 | Baús | 30 · olhos de bronze: 4 |
@@ -51,6 +53,8 @@ Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução l�
 | Jardim de Pedra (chão rachado) | Ninho da Tecelã |
 | Porto e Mina (depois de Lúcio) | Helena, a viúva do farol; o Colosso de Bronze |
 | Submundo, todo abaixo de y=55 | Brasa Viva, Grom, Estátua Ardente, Gárgula Rainha, Redemoinho, Kalas |
+
+**Pistas do Submundo:** fumaça nos chãos rachados, falas dos NPCs, boatos nos altares (`RUMORS` / `altarRumor`, até descer abaixo de y=56, que marca `save.flags.under`) e chãos rachados piscando no mapa.
 
 **Entradas do Submundo:**
 - chão rachado do pântano (x9–11, y54);
@@ -126,6 +130,7 @@ Os testes rodam o jogo inteiro no Node, sem navegador (o canvas é falso), e sim
 | `harness_sub` | Submundo inteiro: caminhos, arco, olhos de bronze, planar, 6 chefes, NPCs, finais |
 | `harness_hints` | pistas para achar o Submundo |
 | `harness_weapons` | armas novas e aviso dos chefes |
+| `harness_levels` | adagas, níveis, inimigos mais fortes e furiosos, boatos do Submundo |
 
 **Dica:** ver o jogo de verdade sem abrir janela. Rode o Edge headless com perfil separado:
 
@@ -169,7 +174,8 @@ O PNG aparece alguns segundos depois de o processo inicial sair. Injete um `<scr
 - [ ] Tileset desenhado no lugar dos blocos procedurais.
 
 ### Jogo
-- [ ] Mais armas de tiro: besta, bombas de cinza, lança de arremesso.
+- [ ] Mais armas de tiro: besta, bombas de cinza, lança de arremesso (as adagas já existem).
+- [ ] Ajustar a curva de níveis (`xpNeed`) e a vida dos inimigos (`FOE_HP`) depois de jogar.
 - [ ] Inventário ou diário com os Ecos lidos e as anotações do mapa.
 - [ ] Mapa com ícones de altares, chefes vencidos, baús abertos e pistas.
 - [ ] Opções de dificuldade (dano recebido, janela de aviso dos chefes).
