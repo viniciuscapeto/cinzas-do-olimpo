@@ -55,7 +55,16 @@
   ok(!err&&fxp.some(p=>p.bolt&&p.col===WEAPON_FX.spear.c)&&fxp.some(p=>p.bolt&&p.col===WEAPON_FX.scythe.c)&&fxp.length>before+20,'cada arma solta o seu efeito (raio azul, raio violeta, fogo, brasa, ouro)'+(err?': '+err.message:''));
   let e2=null;try{drawParticles(true);drawParticles(false)}catch(x){e2=x}ok(!e2,'raios desenham sem erro')}
  ok(Object.keys(WEAPONS).every(w=>WEAPON_LORE[w]&&WEAPON_LORE[w].length>80)&&WEAPON_LORE.bow,'cada arma tem a sua história');
- ok(['w_sword','w_spear','w_scythe','w_hammer','w_shovel','w_bow'].every(k=>SPRITE_DATA[k]),'as 6 armas do Gemini estão no jogo'); // braço em sincronia com a arma: o quadro do ataque segue a direção da arma
+ ok(['w_sword','w_spear','w_scythe','w_hammer','w_shovel','w_bow'].every(k=>SPRITE_DATA[k]),'as 6 armas do Gemini estão no jogo'); // especial (Q) de cada arma: cada um acerta do seu jeito
+ {const pos={spade:30,sword:30,spear:60,scythe:40,hammer:20,shovel:50};let res=[];
+  for(const w of Object.keys(pos)){fresh();save.weapons=Object.keys(WEAPONS);save.weapon=w;P.face=1;run(2);
+   const e=mkEnemy({t:'cult',x:Math.floor((P.x+P.w/2+pos[w])/16),y:Math.floor((P.y+P.h)/16)-1});e.hp=99;e.vx=0;ents.push(e);run(1);e.x=P.x+P.w/2+pos[w]-e.w/2;e.y=P.y+P.h-e.h;
+   const h=e.hp;banner.t=0;eruption();res.push(w+(e.hp<h?'✓':'✗'));ok(e.hp<h&&banner.txt===WEAPON_POWER[w].n,'especial '+WEAPON_POWER[w].n+' ('+w+') acerta o inimigo ('+h+'→'+e.hp.toFixed(1)+')')}
+  fresh();save.weapon='scythe';P.hp=1;const e2=mkEnemy({t:'cult',x:Math.floor(P.x/16)+1,y:Math.floor((P.y+P.h)/16)-1});e2.hp=99;ents.push(e2);const e3=mkEnemy({t:'cult',x:Math.floor(P.x/16)+2,y:Math.floor((P.y+P.h)/16)-1});e3.hp=99;ents.push(e3);
+  e2.x=P.x+20;e2.y=P.y+P.h-e2.h;e3.x=P.x-20;e3.y=P.y+P.h-e3.h;eruption();ok(P.hp>1,'a Ceifa Violeta devolve vida (vida '+P.hp+')')}
+ // braço fluido: a mão desliza entre as poses do golpe
+ {fresh();save.weapon='spade';startAtk(1);const ys=[];let err=null;try{for(let i=0;i<14;i++){P.atk.t=i;drawHeldMelee('spade',{...heroPose(),k:'t0Atk'},100,100,false);ys.push(P.hand.y)}}catch(x){err=x}
+  let jump=0;for(let i=1;i<ys.length;i++)jump=Math.max(jump,Math.abs(ys[i]-ys[i-1]));const span=Math.max(...ys)-Math.min(...ys);ok(!err&&jump<6&&span>4,'no golpe a mão anda sem saltos grandes (percorre '+span.toFixed(1)+' px) (maior salto '+jump.toFixed(1)+' px)');P.atk=null} // braço em sincronia com a arma: o quadro do ataque segue a direção da arma
  {save.weapon='sword';P.swapT=0;P.atk=null;startAtk(1);const seq=[];let okSync=true;for(let i=0;i<14;i++){const a=blades()[0].ang,p=heroPose();seq.push(p.fr);const exp=a<-1.5?0:a<-.45?1:a<.62?2:3;if(p.fr!==exp)okSync=false;P.atk.t++}
   ok(okSync&&new Set(seq).size>=2,'no ataque o braço acompanha a direção da arma: '+seq.join(''));P.atk=null}
  // escudo da bênção

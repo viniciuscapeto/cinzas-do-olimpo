@@ -29,7 +29,7 @@
  // dificuldade: inimigos comuns mais fortes, chefes iguais
  fresh();newGame();const base=ENEMY_SPAWNS.map(mkEnemy);let more=0,elites=0;ents.forEach((e,i)=>{if(e.hp>base[i].hp*1.3-1e-9)more++;if(e.elite)elites++});
  ok(more===ents.length,'todos os inimigos comuns têm mais vida');ok(elites>0&&elites<ents.length*.3,'alguns inimigos furiosos ('+elites+')');
- ok(mkMino().max===B1.max,'chefe com a mesma vida');
+ ok(B1.max===Math.round(mkMino().max*BOSS_HP),'chefes 30% mais resistentes ('+mkMino().max+'→'+B1.max+')');
  const el=mkEnemy({t:'hop',x:10,y:21});el.elite=true;state='play';P.inv=0;P.hp=5;curFoe=el;hurtPlayer(1,el);curFoe=null;ok(P.hp===3,'inimigo furioso tira 2 de vida');
  P.inv=0;P.hp=5;hurtPlayer(1,{x:0,y:0,w:1,h:1});ok(P.hp===4,'outros golpes continuam tirando 1');
  // boatos do Submundo nos altares
