@@ -56,7 +56,7 @@ Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução l�
 
 **Mortes e golpes:** cada inimigo se desfaz no material dele (`GORE`: sangue, gosma, osso, pedra, névoa ou brasa). As gotas caem e viram manchas no chão (`bleed`, `goreDeath`, `stains`). Cada golpe mostra o dano (x10) e soma no contador "N HITS" (`combo`, `countHit`, `drawCombo`), que zera depois de ~2,5 s sem acertar ou ao apanhar.
 
-**Animação de morte:** o inimigo vira um corpo (`corpses`, `mkCorpse`, `updateCorpses`, `drawCorpse`, que reaproveita `drawEnemy`). O corpo é arremessado, tomba, sangra até formar uma poça e queima até virar cinza; osso e pedra desmoronam, e fantasmas sobem e somem. O sangue também mancha as paredes, e quando Teo apanha a tela leva respingos que escorrem (`splats`).
+**Mortes por tipo** (`DEATH`, `mkCorpse`): gárgula vira pedra e se desfaz (no ar, cai e se espatifa); soldado, cultista, bruto e cão explodem em sangue (`explodeGore`); mago, caveira e carniçal explodem em fogo e deixam marca queimada (`explodeFire`); zumbi desmonta em três pedaços e esqueleto desaba em ossos (`pieces`, desenhados com recorte de `drawEnemy`); fantasmas sobem e somem; criatura do pântano e aranha estouram em gosma. O sangue mancha chão e paredes, e quando Teo apanha a tela leva respingos que escorrem (`splats`).
 
 **Visual:** tom de cor escuro (`drawGrade`, mais avermelhado no Submundo), granulação de filme nos gráficos nítidos e vinheta mais forte. Investida com onda e riscos de velocidade, poeira na aterrissagem (`landFx`), faíscas e marcas ao deslizar na parede.
 

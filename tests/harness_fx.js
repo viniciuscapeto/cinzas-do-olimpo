@@ -2,13 +2,18 @@
  const fresh=f=>{newGame();state='play';scr.hidden=true;if(f)f();reset();state='play';ents.forEach(e=>e.dead=true);P.inv=0};
  // animação de morte
  fresh();P.x=8*16;P.y=22*16-22;P.vy=0;P.inv=99999;run(5);
- const e=mkEnemy({t:'hound',x:12,y:21});ents.push(e);P.atk={n:1,t:5,hit:new Set()};hitEnemy(e,99,1,0);P.atk=null;
- ok(corpses.length===1&&corpses[0].kind==='blood','morte deixa um corpo animado');
- run(30);ok(corpses[0]&&corpses[0].landed&&Math.abs(corpses[0].ang)>1,'o corpo cai e tomba de lado');
- const st0=stains.length;run(40);ok(stains.length>st0,'o corpo forma poça de sangue');
- run(80);ok(corpses.length===0,'o corpo vira cinza e some');
- const sk=mkEnemy({t:'hop',x:12,y:21});ents.push(sk);P.atk={n:1,t:5,hit:new Set()};hitEnemy(sk,99,1,0);P.atk=null;run(60);ok(corpses.length===0,'esqueleto desmorona em ossos');
- const gh=mkEnemy({t:'shade',x:12,y:19});ents.push(gh);P.atk={n:1,t:5,hit:new Set()};hitEnemy(gh,99,1,0);P.atk=null;ok(corpses[0]&&corpses[0].kind==='ghost','fantasma sobe e se desfaz');run(60);ok(corpses.length===0,'fantasma some');
+ const kill=(t,x,y)=>{save.flags.lvInfo=1;if(state==='msg'){state='play';scr.hidden=true}const e=mkEnemy({t,x,y});e.hidden=false;e.rise=0;ents.push(e);P.atk={n:1,t:5,hit:new Set()};hitEnemy(e,999,1,0);P.atk=null;return e};
+ fxp=[];kill('hound',12,21);ok(corpses.length===0&&fxp.filter(p=>p.blood).length>40&&fxp.some(p=>p.wave),'cão explode em sangue');
+ run(90);ok(stains.length>10,'o sangue mancha o chão');
+ fxp=[];stains=[];kill('bro',12,21);ok(corpses.length===0&&fxp.filter(p=>p.add&&p.col==='#ffd070').length>5&&stains.length>0,'mago de fogo explode em fogo e deixa marca queimada');
+ corpses=[];kill('zomb',12,21);ok(corpses[0]&&corpses[0].how==='zombie'&&corpses[0].pieces.length===3,'zumbi desmonta em 3 pedaços');
+ run(40);{const ps=corpses[0].pieces;ok(Math.abs(ps[0].px-ps[2].px)+Math.abs(ps[0].py-ps[2].py)>4,'os pedaços se separam')}
+ run(100);ok(corpses.length===0,'pedaços somem');
+ kill('hop',12,21);ok(corpses[0]&&corpses[0].how==='bone','esqueleto desaba em ossos');run(140);ok(corpses.length===0,'ossos somem');
+ kill('garg',12,21);ok(corpses[0]&&corpses[0].how==='stone','gárgula vira pedra');run(40);ok(corpses.length===0&&fxp.some(p=>p.col==='#6a6a72'||p.col==='#8a8a92'),'pedra se desfaz');
+ kill('garg',12,14);run(12);ok(corpses[0]&&corpses[0].fly,'gárgula no ar cai petrificada');run(80);ok(corpses.length===0,'e se espatifa no chão');
+ kill('shade',12,19);ok(corpses[0]&&corpses[0].how==='ghost','fantasma sobe e se desfaz');run(60);ok(corpses.length===0,'fantasma some');
+ fxp=[];kill('thing',12,21);ok(fxp.some(p=>p.blood&&GORE_COL.ichor.includes(p.col)),'criatura do pântano estoura em gosma');
  // sangue na parede e na tela
  fresh();stains=[];fxp.push({x:1*16+15,y:20*16,vx:-3,vy:-1,g:0,life:30,max:30,col:'#b01010',size:1,blood:true});state='play';P.x=8*16;P.y=22*16-22;run(8);
  ok(stains.some(s=>s.wall),'gota que bate na parede mancha a parede');
