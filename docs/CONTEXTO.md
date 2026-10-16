@@ -54,6 +54,10 @@ Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução l�
 | Porto e Mina (depois de Lúcio) | Helena, a viúva do farol; o Colosso de Bronze |
 | Submundo, todo abaixo de y=55 | Brasa Viva, Grom, Estátua Ardente, Gárgula Rainha, Redemoinho, Kalas |
 
+**Mortes e golpes:** cada inimigo se desfaz no material dele (`GORE`: sangue, gosma, osso, pedra, névoa ou brasa). As gotas caem e viram manchas no chão (`bleed`, `goreDeath`, `stains`). Cada golpe mostra o dano (x10) e soma no contador "N HITS" (`combo`, `countHit`, `drawCombo`), que zera depois de ~2,5 s sem acertar ou ao apanhar.
+
+**Viagem:** o menu do altar mostra um mapa do que já foi visto; passar o mouse ou tocar num altar marca o destino (`travelMenu(sel)`, `drawTravelMap`) e o botão "Viajar para…" confirma.
+
 **Pistas do Submundo:** fumaça nos chãos rachados, falas dos NPCs, boatos nos altares (`RUMORS` / `altarRumor`, até descer abaixo de y=56, que marca `save.flags.under`) e chãos rachados piscando no mapa.
 
 **Entradas do Submundo:**
@@ -130,7 +134,7 @@ Os testes rodam o jogo inteiro no Node, sem navegador (o canvas é falso), e sim
 | `harness_sub` | Submundo inteiro: caminhos, arco, olhos de bronze, planar, 6 chefes, NPCs, finais |
 | `harness_hints` | pistas para achar o Submundo |
 | `harness_weapons` | armas novas e aviso dos chefes |
-| `harness_levels` | adagas, níveis, inimigos mais fortes e furiosos, boatos do Submundo |
+| `harness_levels` | adagas, níveis, inimigos mais fortes e furiosos, boatos do Submundo, sangue, combo e mapa da viagem |
 
 **Dica:** ver o jogo de verdade sem abrir janela. Rode o Edge headless com perfil separado:
 

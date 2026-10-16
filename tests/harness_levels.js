@@ -37,4 +37,14 @@
  hints={};save.flags.under=1;altarRumor();ok(save.flags.rumor===1,'sem boatos depois de achar o Submundo');
  fresh();P.x=12*16;P.y=78*16-22;P.vy=0;P.inv=99999;run(20);close();ok(save.flags.under,'descer abaixo de y=56 marca o Submundo como achado');
  showMap=true;run(2);showMap=false;ok(true,'mapa desenha os chãos rachados');
+ // sangue, combo e números de dano
+ fresh();P.x=8*16;P.y=22*16-22;P.vy=0;P.inv=99999;run(5);const v=mkEnemy({t:'hound',x:12,y:21});ents.push(v);P.atk={n:1,t:5,hit:new Set()};
+ hitEnemy(v,1,1,0);ok(combo.n===1&&fxp.some(p=>p.num)&&fxp.some(p=>p.blood),'golpe conta hit, mostra dano e espirra sangue');
+ hitEnemy(v,99,1,0);ok(combo.n===2&&v.dead,'segundo golpe soma no combo');P.atk=null;run(90);ok(stains.length>5,'gotas viram manchas no chão ('+stains.length+')');
+ run(160);ok(combo.n===0,'combo zera depois de um tempo sem acertar');
+ const sk=mkEnemy({t:'hop',x:12,y:21});ents.push(sk);fxp=[];hitEnemy(sk,99,1,0);ok(!fxp.some(p=>p.blood)&&fxp.some(p=>p.col==='#e6dccb'||p.col==='#fff6e8'),'esqueleto solta ossos, não sangue');
+ combo.n=5;combo.t=100;P.inv=0;hurtPlayer(1,{x:0,y:0,w:1,h:1});ok(combo.n===0,'apanhar zera o combo');
+ // viagem mostra o destino no mapa
+ fresh();save.lit=[1,3,4];save.cp={x:STATUES[1].x,y:STATUES[1].y};travelMenu();ok(travelSel===3&&panel.innerHTML.includes('tmap')&&panel.innerHTML.includes('Viajar para'),'viagem abre com mapa e destino escolhido');
+ travelMenu(4);ok(travelSel===4,'escolher outro altar muda o destino');travelTo(travelSel);ok(save.cp.x===STATUES[4].x,'confirmar viaja para o destino escolhido');
  console.log(fails?fails+' FALHA(S)':'TUDO OK')})();
