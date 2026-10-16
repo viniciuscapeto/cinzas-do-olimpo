@@ -11,8 +11,8 @@ Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução l�
 
 | Item | Quantidade |
 |---|---|
-| Áreas com nome | 45 |
-| Chefes | 21 (8 obrigatórios + 9 opcionais + 4 do Ato II) |
+| Áreas com nome | 50 |
+| Chefes | 23 (8 obrigatórios + 11 opcionais + 4 do Ato II) |
 | Armas corpo a corpo | 5: Espada, Lança, Foice, Martelo, Pá de Dimas |
 | Armas de tiro | Adagas do Coveiro (Ruínas, plataforma em x15 y18; 5 adagas que voltam sozinhas) e Arco (flecha normal e carregada; flechas de fogo depois). Com o arco, as adagas saem quando as flechas acabam |
 | Níveis | 1 a 30. Inimigos e chefes dão experiência (`gainXp`, `xpNeed`, `BOSS_XP`); cada nível dá +4% de dano e a cada 4 níveis +1 de vida máxima |
@@ -55,6 +55,24 @@ Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução l�
 | Submundo, todo abaixo de y=55 | Brasa Viva, Grom, Estátua Ardente, Gárgula Rainha, Redemoinho, Kalas |
 
 **Mortes e golpes:** cada inimigo se desfaz no material dele (`GORE`: sangue, gosma, osso, pedra, névoa ou brasa). As gotas caem e viram manchas no chão (`bleed`, `goreDeath`, `stains`). Cada golpe mostra o dano (x10) e soma no contador "N HITS" (`combo`, `countHit`, `drawCombo`), que zera depois de ~2,5 s sem acertar ou ao apanhar.
+
+### Áreas opcionais
+
+| Área | Entrada | O que tem |
+|---|---|---|
+| Adega do Templo (x66-105, y18-30) | chão rachado no Templo da Colheita (x70-72, golpe de queda) | altar, baús (Moeda de Caronte) |
+| Ossuário Esquecido e Covil do Glutão (x74-106, y36-50) | poço no fundo da adega | **O Glutão do Ossuário** (come os zumbis que chama para se curar): +1 de vida, +60 cinzas, Dente do Vampiro |
+| Sótão do Relógio e Engrenagem Mestra (x210-251, y1-9) | parede rachada na Sala das Horas (investida) | baú (Trevo de Cinza), **O Autômato do Sótão**: +1 espaço de amuleto, Sandálias de Hermes |
+
+### Sistemas de longo prazo
+
+- **Itens raros** (`RARES`, são amuletos): Dente do Vampiro, Coroa de Espinhos, Moeda de Caronte, Sandálias de Hermes, Lágrima de Eurídice, Trevo de Cinza, Sino Rachado e Coroa de Cinza. Caem dos inimigos (6% dos furiosos, 0,6% dos comuns), além de vir de baús, dos chefes opcionais, da arena (onda 10) e da primeira vez em cada Noite+.
+- **Conquistas** (`ACH`, 22): guardadas no navegador fora do save (`cinzas-ach`), valem para todos os jogos. Estatísticas em `save.stats`.
+- **Modo chefe** (altar → Ecos dos chefes): revanche contra qualquer chefe vencido, 25% mais forte, com recorde de tempo (`REMATCH`, `startRematch`, `endRematch`; a vitória volta ao altar com `reset()`).
+- **Arena sem fim**: 4ª prova do Brás (`TRIALS[3]`, `endlessWave`), com recorde em `save.records.arena`.
+- **Noite+**: cada volta tem nome e uma regra nova (`NG_NAMES`, `NG_RULES`): 2 = mais furiosos, 3 = golpes tiram 1 a mais, 4 = chefes 25% mais rápidos, 5 = orbes raras. A primeira vez em cada volta dá 5 bronze e um item raro.
+- **Save**: salva sozinho a cada 30 s e ao fechar a aba (fora de cenas e mortes de chefe), exporta/importa arquivo, e guarda uma cópia como **save do criador** (`cinzas-slot-criador`) na primeira vez que esta versão abre.
+- **Atenção à ordem**: `STATUES` e `TRIALS` são guardados no save pelo número. Coisas novas entram sempre no fim dessas listas.
 
 ### Ato II · O Sonho da Montanha
 
@@ -155,6 +173,7 @@ Os testes rodam o jogo inteiro no Node, sem navegador (o canvas é falso), e sim
 | `harness_sub` | Submundo inteiro: caminhos, arco, olhos de bronze, planar, 6 chefes, NPCs, finais |
 | `harness_hints` | pistas para achar o Submundo |
 | `harness_weapons` | armas novas e aviso dos chefes |
+| `harness_extra` | áreas opcionais, Glutão e Autômato, itens raros, conquistas, save do criador, revanche contra os 23 chefes, arena sem fim e Noite+ |
 | `harness_dream` | Ato II: região lacrada, inimigos, fendas, os 4 chefes, saídas, lembranças, objetivo, save antigo, pá e Passo do Eco |
 | `harness_fx` | animação de morte, sangue na parede e na tela, poeira, objetivo, pensamentos, capítulos e cenas |
 | `harness_levels` | adagas, níveis, inimigos mais fortes e furiosos, boatos do Submundo, sangue, combo e mapa da viagem |
@@ -201,7 +220,6 @@ O PNG aparece alguns segundos depois de o processo inicial sair. Injete um `<scr
 - [ ] Tileset desenhado no lugar dos blocos procedurais.
 
 ### Jogo
-- [ ] Próximas etapas pedidas: áreas opcionais novas no mapa atual; modo chefe, arena, conquistas e itens raros; mais voltas de Noite+.
 - [ ] Mais armas de tiro: besta, bombas de cinza, lança de arremesso (as adagas já existem).
 - [ ] Ajustar a curva de níveis (`xpNeed`) e a vida dos inimigos (`FOE_HP`) depois de jogar.
 - [ ] Inventário ou diário com os Ecos lidos e as anotações do mapa.

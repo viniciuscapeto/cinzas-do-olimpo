@@ -124,7 +124,7 @@ kbd{font-family:var(--f-pix);font-size:.66rem;border:1px solid var(--edge);paddi
 </style>
 
 <div class="wrap">
-  <header><h1>Cinzas do Olimpo</h1><span class="sub">Metroidvania 2D · 45 áreas, 21 chefes, 5 armas, adagas e arco, níveis, forja, amuletos e um mistério</span></header>
+  <header><h1>Cinzas do Olimpo</h1><span class="sub">Metroidvania 2D · 50 áreas, 23 chefes, 5 armas, adagas e arco, níveis, forja, amuletos e um mistério</span></header>
   <p class="turn">Toque em <b>Tela cheia</b> e vire o celular na horizontal.</p>
   <div class="play" id="play">
     <div class="stage" id="stage">
@@ -339,6 +339,7 @@ const BRAZIERS=[[10,21],[27,21],[40,21],[8,38],[30,38],[47,38],[60,38],[53,15],[
 const CRYSTALS=[[5,28],[12,30],[34,28],[45,29],[58,30],[61,34],[15,36],[3,35],[200,44],[230,43],[244,46],[252,44],[207,42],
   [284,31],[300,30],[318,33],[336,30],[305,45],[328,44],[270,46],[280,44]];
 const ZONES={
+  'Adega do Templo':{dark:.6,f:2500},'Ossuário Esquecido':{dark:.75,f:1800},'Covil do Glutão':{dark:.7,f:1800},'Sótão do Relógio':{dark:.3,f:4000},'Engrenagem Mestra':{dark:.3,f:4000},
   'Margem do Sonho':{dark:.15,f:5000},'Casa de Eurídice':{dark:.2,f:4200},'Cemitério de Dimas':{dark:.3,f:3800},'Estrada da Caravana':{dark:.25,f:5000},
   'Quarto da Febre':{dark:.35,f:2600},'Praça da Festa Sonhada':{dark:.15,f:6000},'Espelho do Eco':{dark:.3,f:5000},'Cume do Sonho':{dark:.1,f:7000},'Olho da Montanha':{dark:.2,f:7000},
   'Ruínas de Olimpo':{dark:0,f:7000},'Catacumbas':{dark:.86,f:900},'Templo da Colheita':{dark:.18,f:7000},
@@ -619,7 +620,7 @@ const FOE_HP=1.35,ELITE_P=.12; // vida extra dos inimigos comuns e chance de nas
 const KNIFE_MAX=5,KNIFE_REGEN=110; // adagas: quantas cabem e quadros para voltar uma
 const CHG=36; // quadros segurando atacar até o golpe carregado ficar pronto
 
-let grid,seen=new Uint8Array(W*H),ents,items,statues,fxp,waves,shots,pshots=[],zones,chests=[],trial=null,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,B18,B19,B20,B21,boss,P,save,cam={x:0,y:0},talkQ=null,SC=null;
+let grid,seen=new Uint8Array(W*H),ents,items,statues,fxp,waves,shots,pshots=[],zones,chests=[],trial=null,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,B18,B19,B20,B21,B22,B23,rematch=null,fightHit=false,wasFight=false,boss,P,save,cam={x:0,y:0},talkQ=null,SC=null;
 let state='title',hitstop=0,shake=0,frames=0,banner={t:0,txt:''},zone='',showMap=false,deadT=0,hints={},dark=0,hurtFlash=0,stoneFlash=0;
 
 /* ---------- mundo ---------- */
@@ -731,6 +732,7 @@ function buildWorld(){
   f(150,92,4,1,'=');f(166,90,4,1,'=');f(140,88,6,6,'#');f(176,94,3,4,'#');f(80,92,4,1,'=');
   f(36,98,23,1,'L');f(60,86,6,1,'=');f(64,94,3,1,'=');f(61,90,3,1,'=');  // lago de fogo: só planando
   f(31,80,1,8,'#');                                                    // trono do sumo-sacerdote (x1-30)
+  buildOptional(f);
   buildDream(f);
   // nichos com portão de bronze
   f(64,35,3,4,'.');f(78,12,3,4,'.');
@@ -745,6 +747,7 @@ const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 function circRect(cx,cy,r,e){const nx=Math.max(e.x,Math.min(cx,e.x+e.w)),ny=Math.max(e.y,Math.min(cy,e.y+e.h));return (cx-nx)**2+(cy-ny)**2<=r*r}
 function zoneAt(tx,ty){
   if(tx>=339)return dreamZone(tx,ty);
+  const oz=optZone(tx,ty);if(oz)return oz;
   if(ty>=40&&ty<55&&tx<72)return tx>=48?'Covil da Besta':'Pântano Afundado';
   if(ty>=55){
     if(ty>=79){if(tx<=31)return'Trono do Sumo-Sacerdote';if(tx>=99&&tx<=131)return'Olho do Redemoinho';if(tx<=231)return'Santuário Profundo';return tx<=256?'Trono da Rainha':'Ninho das Gárgulas'}
@@ -821,10 +824,10 @@ function breakWall(tx,ty){
 function freshSave(){return{ab:{jump:false,dash:false,wall:false},maxHp:5,cp:{x:4,y:21},taken:[],broken:[],bossDead:false,boss2Dead:false,boss3Dead:false,boss4Dead:false,boss5Dead:false,
   boss6Dead:false,boss7Dead:false,boss8Dead:false,boss9Dead:false,boss10Dead:false,boss11Dead:false,talked:{},ash:0,tech:{},flags:{},
   weapons:['sword'],weapon:'sword',bronze:0,swordLv:0,flaskMax:2,flaskLv:0,slots:3,charms:[],equip:[],chests:[],lit:[],ng:0,trials:{},
-  boss12Dead:false,boss13Dead:false,boss14Dead:false,boss15Dead:false,boss16Dead:false,boss17Dead:false,boss18Dead:false,boss19Dead:false,boss20Dead:false,boss21Dead:false,arrowsMax:0,quiverLv:0,tipsLv:0,lv:1,xp:0}}
+  boss12Dead:false,boss13Dead:false,boss14Dead:false,boss15Dead:false,boss16Dead:false,boss17Dead:false,boss22Dead:false,boss23Dead:false,stats:{},records:{},ngBest:0,boss18Dead:false,boss19Dead:false,boss20Dead:false,boss21Dead:false,arrowsMax:0,quiverLv:0,tipsLv:0,lv:1,xp:0}}
 const hasCharm=id=>save.equip.includes(id);
 const maxHp=()=>save.maxHp+lvHp()+(hasCharm('ferro')?1:0);
-const dmgMult=()=>(1+.25*save.swordLv)*(hasCharm('sangue')?1.5:1)*(1+LV_DMG*((save.lv||1)-1))*(hasCharm('febre')&&P&&P.hp<=1?2:1);
+const dmgMult=()=>(1+.25*save.swordLv)*(hasCharm('sangue')?1.5:1)*(1+LV_DMG*((save.lv||1)-1))*(hasCharm('febre')&&P&&P.hp<=1?2:1)*(hasCharm('coroa')?1.25:1);
 /* níveis: inimigos e chefes dão experiência; cada nível dá +4% de dano e a cada 4 níveis +1 de vida máxima */
 const LV_MAX=30,LV_DMG=.04;
 const xpNeed=l=>10+l*10;
@@ -837,6 +840,8 @@ function gainXp(n){
   if(!up)return;
   if(P){P.hp=maxHp();burst(P.x+5,P.y+11,'#ffe090',26,2.6,true);for(let i=0;i<16;i++){const a=i/16*Math.PI*2;fxp.push({x:P.x+5,y:P.y+11,vx:Math.cos(a)*1.8,vy:Math.sin(a)*1.8-1,life:30,max:30,col:i%2?'#ffd070':'#fff6e0',size:2,add:true})}}
   sfx('altar');updateAbil();persist();
+  if(hasCharm('sino2')&&P&&!gainXp.busy){gainXp.busy=1;fxp.push({wave:true,x:P.x+5,y:P.y+11,R:110,life:24,max:24,col:'#ffe090',vx:0,vy:0});shake=Math.max(shake,6);
+    for(const e of ents)if(!e.dead&&!e.hidden&&Math.hypot(e.x+e.w/2-P.x-5,e.y+e.h/2-P.y-11)<110)hitEnemy(e,4,Math.sign(e.x-P.x)*3,-2);gainXp.busy=0}
   const txt='Nível '+save.lv+'! +'+Math.round(LV_DMG*100*up)+'% de dano'+(hp?' e +'+hp+' de vida máxima':'')+' · vida restaurada';
   if(!save.flags.lvInfo&&state==='play'&&!(boss&&boss.state!=='sleep')){save.flags.lvInfo=1;showMsg({n:'Nível '+save.lv,d:'Derrotar inimigos e chefes dá experiência (a barrinha dourada embaixo do bronze). Cada nível aumenta o seu dano em 4% e recupera a vida; a cada 4 níveis você ganha +1 de vida máxima. Inimigos furiosos, com brilho vermelho, dão o dobro.'})}
   else say(txt);
@@ -847,7 +852,7 @@ function reset(){
   buildWorld();
   ents=ENEMY_SPAWNS.map(mkEnemy);
   // inimigos comuns: mais vida, e alguns furiosos (brilho vermelho, batem mais forte, dão o dobro de experiência)
-  for(const e of ents){e.xp=Math.round(e.hp*1.5)+1;e.hp*=FOE_HP;if(Math.random()<ELITE_P){e.elite=true;e.hp*=1.8;e.xp*=2}}
+  for(const e of ents){e.xp=Math.round(e.hp*1.5)+1;e.hp*=FOE_HP;if(Math.random()<ELITE_P+Math.min(.33,Math.max(0,(save.ng||0)-1)*.1)){e.elite=true;e.hp*=1.8;e.xp*=2}}
   // no sonho os mortos são lembranças: mais fortes, tom violeta, mais experiência
   ents.forEach((e,i)=>{if(ENEMY_SPAWNS[i]&&ENEMY_SPAWNS[i].x>=339){e.dream=true;e.hp*=1.4;e.xp=Math.round(e.xp*1.6)}});
   items=ITEM_SPAWNS.filter(i=>!save.taken.includes(i.id)).map(i=>({id:i.id,x:i.x*TS+3,y:i.y*TS+2,w:10,h:12}));
@@ -857,9 +862,10 @@ function reset(){
   B10=save.boss10Dead?null:mkWidow();B11=save.boss11Dead?null:mkColossus();
   B12=save.boss12Dead?null:mkSpirit();B13=save.boss13Dead?null:mkJailer();B14=save.boss14Dead?null:mkStatue();B15=save.boss15Dead?null:mkQueen();B16=save.boss16Dead?null:mkTornado();B17=save.boss17Dead?null:mkPriest();
   B18=save.boss18Dead?null:mkDigger();B19=save.boss19Dead?null:mkFever();B20=save.boss20Dead?null:mkEcho();B21=save.boss21Dead?null:mkDreamer();
+  B22=save.boss22Dead?null:mkGlutton();B23=save.boss23Dead?null:mkAutomaton();rematch=null;
   // Nova Noite+: tudo fica mais resistente
   const ng=save.ng||0;
-  if(ng){ents.forEach(e=>e.hp*=1+.6*ng);for(const b of [B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,B18,B19,B20,B21])if(b){b.max=Math.round(b.max*(1+.5*ng));b.hp=b.max}}
+  if(ng){ents.forEach(e=>e.hp*=1+.6*ng);for(const b of [B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,B18,B19,B20,B21,B22,B23])if(b){b.max=Math.round(b.max*(1+.5*ng));b.hp=b.max}}
   chests=CHESTS.map(c=>({id:c.id,r:c.r,x:c.x*TS-1,y:(c.y+1)*TS-14,w:18,h:14,open:save.chests.includes(c.id)}));
   trial=null;
   waves=[];shots=[];zones=[];fxp=[];pshots=[];stains=[];corpses=[];splats=[];hitstop=0;combo.n=0;combo.t=0;
@@ -965,7 +971,7 @@ function step(){
   if(hitstop>0){hitstop--;return}
   frames++;
   const ptx=P.x/TS,pty=P.y/TS;
-  boss=ptx>=339?(pty>=85?B18:pty>=59?B19:pty>=29?B20:B21):pty>=55?(pty>=79.5?(ptx<31.5?B17:(ptx>=99&&ptx<=131.5)?B16:(ptx>=231&&ptx<257)?B15:null):(ptx>=51&&ptx<71)?B12:(ptx>=130&&ptx<151)?B13:(ptx>=205&&ptx<231)?B14:null):(pty>=39.5&&ptx<72)?B5:(pty>=39.5&&ptx>=149&&ptx<179)?B9:ptx>=262?(pty<8.5?B10:pty>=41.5&&ptx<290?B11:null):ptx>=179?(pty>=39.5?B8:pty<9.5?B6:B7):(pty>=26&&ptx>=109)?(ptx>=164.5?B4:B3):(ptx>150?B2:B1);
+  boss=(ptx>=73.5&&ptx<91&&pty>=35.5&&pty<51)?B22:(ptx>=209.5&&ptx<252&&pty<10.5)?B23:ptx>=339?(pty>=85?B18:pty>=59?B19:pty>=29?B20:B21):pty>=55?(pty>=79.5?(ptx<31.5?B17:(ptx>=99&&ptx<=131.5)?B16:(ptx>=231&&ptx<257)?B15:null):(ptx>=51&&ptx<71)?B12:(ptx>=130&&ptx<151)?B13:(ptx>=205&&ptx<231)?B14:null):(pty>=39.5&&ptx<72)?B5:(pty>=39.5&&ptx>=149&&ptx<179)?B9:ptx>=262?(pty<8.5?B10:pty>=41.5&&ptx<290?B11:null):ptx>=179?(pty>=39.5?B8:pty<9.5?B6:B7):(pty>=26&&ptx>=109)?(ptx>=164.5?B4:B3):(ptx>150?B2:B1);
   updatePlayer();if(state!=='play')return;
   updateEnemies();updateCorpses();updateTraps();updateWatchers();updateBoss();updateTrial();updateWaves();updateShots();updatePShots();updateZones();updateItems();updateStatues();updateRifts();updateNpcs();updateParticles();
   updateCamera();markSeen();
@@ -974,7 +980,9 @@ function step(){
   dark+=(((ZONES[zone]||{}).dark||0)*(hasCharm('lanterna')?.55:1)-dark)*0.05;
   hintsCheck();storyTick();
   const fighting=boss&&boss.state!=='sleep'&&boss.state!=='dead';
-  setTrack(fighting?({mino:'boss',medusa:'boss2',cerb:'boss3',ares:'boss4',beast:'boss5',clock:'boss6',banner:'boss7',weaver:'boss8',heart:'boss9',widow:'boss10',colossus:'boss11',spirit:'boss12',jailer:'boss13',statue:'boss14',queen:'boss15',tornado:'boss16',priest:'boss17',digger:'boss18',fever:'boss19',echo:'boss20',dreamer:'boss21'}[boss.kind]):trial?'boss7':'explore');
+  if(fighting&&!wasFight)fightHit=false;wasFight=fighting;
+  if(rematch){rematch.t++;if(rematch.t===90&&boss&&boss.state==='sleep'){boss.state='idle';boss.t=30}}
+  setTrack(fighting?({mino:'boss',medusa:'boss2',cerb:'boss3',ares:'boss4',beast:'boss5',clock:'boss6',banner:'boss7',weaver:'boss8',heart:'boss9',widow:'boss10',colossus:'boss11',spirit:'boss12',jailer:'boss13',statue:'boss14',queen:'boss15',tornado:'boss16',priest:'boss17',digger:'boss18',fever:'boss19',echo:'boss20',dreamer:'boss21',glutton:'boss22',automaton:'boss23'}[boss.kind]):trial?'boss7':'explore');
   setFilter((ZONES[zone]||{}).f||7000);
   prev={...keys};for(const k in tapped)tapped[k]=false;
 }
@@ -1022,7 +1030,7 @@ function updatePlayer(){
   if(pressed('heal')&&p.ground&&!p.drink&&p.flasks>0&&!p.atk&&p.dashT===0&&!p.power&&P.hp<maxHp()){p.drink=hasCharm('gole')?22:36;p.chg=0;sfx('orb')}
   if(p.drink>0){
     p.drink--;p.vx*=.6;if(frames%3===0)fxp.push({x:p.x+Math.random()*p.w,y:p.y+p.h-Math.random()*8,vx:0,vy:-1,life:18,max:18,col:'#ff9a6a',size:1,add:true});
-    if(p.drink===0){p.flasks--;P.hp=Math.min(maxHp(),P.hp+2+save.flaskLv+(hasCharm('gole')?1:0));sfx('altar');burst(p.x+5,p.y+8,'#ff6a5a',16,2,true)}
+    if(p.drink===0){p.flasks--;P.hp=Math.min(maxHp(),P.hp+2+save.flaskLv+(hasCharm('gole')?1:0)+(hasCharm('lagrima')?1:0));sfx('altar');burst(p.x+5,p.y+8,'#ff6a5a',16,2,true)}
     p.vy=Math.min(p.vy+G,MAXF);moveX(p,p.vx);if(moveY(p,p.vy,false)===1){p.vy=0}
     return;
   }
@@ -1092,7 +1100,7 @@ function updatePlayer(){
   else if(p.wallLock>0){p.wallLock--}
   else if(!p.plunge){
     if(dir&&!atkGround)p.face=dir;
-    const slow=(p.aim>8?.5:1)*(atkGround?(p.atk.n===3?0.45:p.atk.n===4?0.1:0.25):1)*(p.chg>6?0.35:1)*(p.web>0?0.5:1)*(hasCharm('pena')?1.15:1);
+    const slow=(p.aim>8?.5:1)*(atkGround?(p.atk.n===3?0.45:p.atk.n===4?0.1:0.25):1)*(p.chg>6?0.35:1)*(p.web>0?0.5:1)*(hasCharm('pena')?1.15:1)*(hasCharm('agil')?1.2:1);
     p.vx+=(dir*RUN*slow-p.vx)*(p.ground?0.35:0.22);
     if(Math.abs(p.vx)<0.05)p.vx=0;
   }
@@ -1217,7 +1225,7 @@ function bossHittable(){return boss&&boss.state!=='sleep'&&boss.state!=='dead'}
 function slashFx(x,y){const a=Math.random()*Math.PI;fxp.push({x,y,ang:a,life:9,max:9,slash:true,add:true});fxp.push({x,y,ang:a+1.6,life:7,max:7,slash:true,small:true,add:true})}
 /* mortes à Castlevania: cada inimigo se desfaz no material dele; o sangue cai, bate no chão e mancha */
 const GORE={hop:'bone',harp:'ember',ghoul:'ember',garg:'stone',shade:'ghost',shadow:'ghost',spider:'ichor',thing:'ichor',
-  clock:'stone',statue:'stone',colossus:'stone',tornado:'ghost',spirit:'ember',digger:'blood',fever:'ghost',echo:'ghost',dreamer:'ghost'};
+  clock:'stone',statue:'stone',colossus:'stone',tornado:'ghost',spirit:'ember',digger:'blood',fever:'ghost',echo:'ghost',dreamer:'ghost',glutton:'blood',automaton:'stone'};
 const GORE_COL={blood:['#b01010','#d81c1c','#ff3a2a','#7a0808'],ichor:['#3a7a1a','#5aa02a','#2a5a12','#8ac04a'],bone:['#e6dccb','#c8bca8','#fff6e8','#9a8e7a'],
   stone:['#6a6a7a','#8a8a96','#4a4a56','#a8a8b4'],ghost:['#7fe0d0','#b8f0ff','#5a9ab0','#e8ffff'],ember:['#ff8a3a','#ffd070','#ff5a1a','#c83a10']};
 let stains=[];
@@ -1257,6 +1265,7 @@ function drawStains(){
 const combo={n:0,t:0,pop:0,best:0};
 function countHit(x,y,val,big){
   combo.n++;combo.t=150;combo.pop=8;if(combo.n>combo.best)combo.best=combo.n;
+  if(save){save.stats=save.stats||{};if(combo.n>(save.stats.combo||0))save.stats.combo=combo.n}
   fxp.push({num:true,txt:String(Math.max(1,Math.round(val*10))),x:x+(Math.random()-.5)*8,y:y-6,vx:(Math.random()-.5)*.3,vy:-1.1,g:.03,life:42,max:42,col:big?'#ffd070':'#ffffff'});
 }
 function drawCombo(){
@@ -1281,7 +1290,8 @@ function hitEnemy(e,dmg,kx,ky){
   addFury(dmg);
   {const g=goreOf(e.t),d=Math.sign(kx)||P.face;countHit(e.x+e.w/2,e.y,dmg*dmgMult(),dmg>1);bleed(e.x+e.w/2,e.y+e.h/2,g,dmg>1?10:6,d,1);
    if(e.hp-dmg*dmgMult()<=0&&!e.hidden)goreDeath(e.x+e.w/2,e.y+e.h/2,g,d,e.t==='brute'||e.t==='thing'||e.elite)}
-  e.hp-=dmg*dmgMult();feedHit();e.flash=8;e.kb=10;e.kbv=kx*(e.t==='bro'?.4:1);if(ky&&(e.t==='harp'||e.t==='shade'))e.vy=ky;
+  e.hp-=dmg*dmgMult();feedHit();e.flash=8;e.kb=10;
+  if(hasCharm('vampiro')&&(P.vamp=(P.vamp||0)+1)>=15){P.vamp=0;if(P.hp<maxHp()){P.hp++;burst(P.x+5,P.y+8,'#ff6a5a',10,1.5,true);sfx('orb')}}e.kbv=kx*(e.t==='bro'?.4:1);if(ky&&(e.t==='harp'||e.t==='shade'))e.vy=ky;
   // acertar durante a preparação cancela o golpe do inimigo
   if(e.atk==='wind'){e.atk='rec';e.at=24}
   if(e.mode==='wind'||e.mode==='dive'){e.mode=null;e.cd=70}
@@ -1292,7 +1302,10 @@ function hitEnemy(e,dmg,kx,ky){
     for(let i=0;i<14;i++)fxp.push({x:e.x+e.w/2,y:e.y+e.h/2,vx:(Math.random()-.5)*4,vy:-Math.random()*3.5,g:.18,life:30+Math.random()*20,max:50,col:BITS[e.t],size:2+(i%2),bounce:true});
     if(save.ab.bow&&!e.summoned&&Math.random()<.25)items.push({id:'arw',x:e.x+e.w/2-3,y:e.y+2,w:8,h:6,vy:-2.5});
     if(!e.summoned)gainXp(e.xp||3);
-    if(Math.random()<(hasCharm('sorte')?.55:.25))items.push({id:'orb',x:e.x+e.w/2-3,y:e.y,w:6,h:6,vy:-2.5});
+    if(!e.summoned&&!e.trial){const pool=RARES.filter(id=>id!=='coroa'&&!save.charms.includes(id)&&!items.some(i=>i.id==='rare_'+id)),ch=(e.elite?.06:.006)*(hasCharm('trevo')?3:1);
+      if(pool.length&&Math.random()<ch)items.push({id:'rare_'+pool[Math.floor(Math.random()*pool.length)],x:e.x+e.w/2-5,y:e.y,w:10,h:10,vy:-3})}
+    save.stats=save.stats||{};save.stats.kills=(save.stats.kills||0)+1;if(e.elite)save.stats.elites=(save.stats.elites||0)+1;
+    if(Math.random()<((hasCharm('sorte')?.55:.25)+(hasCharm('trevo')?.15:0))*((save.ng||0)>=5?.5:1))items.push({id:'orb',x:e.x+e.w/2-3,y:e.y,w:6,h:6,vy:-2.5});
     // cinzas: moeda das técnicas (invocados pelos chefes não soltam, para não dar para farmar na luta)
     if(e.t==='brute'&&!e.summoned){save.bronze++;say('+1 fragmento de bronze')}
     if(!e.summoned){const n=1+(Math.random()<.35?1:0)+(e.t==='guard'||e.t==='thing'?1:0)+(hasCharm('ima')?1:0);
@@ -1310,9 +1323,10 @@ function hitBoss(dmg){
   hitstop=5;shake=Math.max(shake,4);sfx('hit');
   if(b.hp<=0){sfx('bossdie');b.state='dead';gainXp(BOSS_XP[b.kind]||40);b.t=110;b.vx=0;b.sweep=null;waves=[];shots=[];zones=[];shake=14;hitstop=14;
     ents.forEach(e=>{if(e.summoned)e.dead=true});
-    save[{mino:'bossDead',medusa:'boss2Dead',cerb:'boss3Dead',ares:'boss4Dead',beast:'boss5Dead',clock:'boss6Dead',banner:'boss7Dead',weaver:'boss8Dead',heart:'boss9Dead',widow:'boss10Dead',colossus:'boss11Dead',spirit:'boss12Dead',jailer:'boss13Dead',statue:'boss14Dead',queen:'boss15Dead',tornado:'boss16Dead',priest:'boss17Dead',digger:'boss18Dead',fever:'boss19Dead',echo:'boss20Dead',dreamer:'boss21Dead'}[b.kind]]=true}
+    save[{mino:'bossDead',medusa:'boss2Dead',cerb:'boss3Dead',ares:'boss4Dead',beast:'boss5Dead',clock:'boss6Dead',banner:'boss7Dead',weaver:'boss8Dead',heart:'boss9Dead',widow:'boss10Dead',colossus:'boss11Dead',spirit:'boss12Dead',jailer:'boss13Dead',statue:'boss14Dead',queen:'boss15Dead',tornado:'boss16Dead',priest:'boss17Dead',digger:'boss18Dead',fever:'boss19Dead',echo:'boss20Dead',dreamer:'boss21Dead',glutton:'boss22Dead',automaton:'boss23Dead'}[b.kind]]=true;
+    save.stats=save.stats||{};if(!fightHit)save.stats.hitless=(save.stats.hitless||0)+1}
 }
-const BOSS_XP={mino:30,medusa:36,cerb:42,ares:48,beast:40,clock:60,banner:60,weaver:55,heart:120,widow:70,colossus:75,spirit:70,jailer:75,statue:80,queen:85,tornado:90,priest:150,digger:110,fever:120,echo:140,dreamer:220};
+const BOSS_XP={mino:30,medusa:36,cerb:42,ares:48,beast:40,clock:60,banner:60,weaver:55,heart:120,widow:70,colossus:75,spirit:70,jailer:75,statue:80,queen:85,tornado:90,priest:150,digger:110,fever:120,echo:140,dreamer:220,glutton:100,automaton:110};
 function doHits(bl,dmg){
   for(const b of bl){
     const pts=[[b.x,b.y,10],[(b.hx+b.x)/2,(b.hy+b.y)/2,6],[b.hx+(b.x-b.hx)*.78,b.hy+(b.y-b.hy)*.78,7]];
@@ -1333,6 +1347,9 @@ function hurtPlayer(n,src){
     for(let i=0;i<20;i++){const a=i/20*Math.PI*2;fxp.push({x:P.x+5,y:P.y+11,vx:Math.cos(a)*2.4,vy:Math.sin(a)*2.4,life:22,max:22,col:i%2?'#9ad8ff':'#e8f6ff',size:2,add:true})}
     say('A bênção segurou o golpe');return}
   if(curFoe&&curFoe.elite)n++;
+  if(curFoe&&(save.ng||0)>=3)n++;
+  if(hasCharm('espinho')&&curFoe&&!curFoe.dead){const f=curFoe;curFoe=null;hitEnemy(f,2,Math.sign(f.x-P.x)*2,-1);curFoe=f}
+  if(fightingNow())fightHit=true;
   P.drink=0;P.hp-=n*(hasCharm('sangue')?2:1);P.inv=hasCharm('pedra')?100:60;hurtFlash=14;P.stone=0;
   const d=Math.sign((P.x+P.w/2)-(src.x+src.w/2))||-P.face;
   P.vx=d*3;P.vy=-4;P.kbT=12;P.atk=null;P.queue=false;P.plunge=false;shake=7;hitstop=6;sfx('hurt');
@@ -1591,6 +1608,7 @@ function flyAI(e,dx){
 function bossDeath(b){
   b.t--;if(b.t%7===0)burst(b.x+Math.random()*b.w,b.y+Math.random()*b.h,b.kind==='medusa'?'#9be07a':'#ff8a3a',8,2.5,true);
   if(b.t>0)return;
+  if(rematch&&rematch.kind===b.kind){endRematch(b);return}
   burst(b.x+b.w/2,b.y+b.h/2,'#ffd08a',40,4,true);
   // cada guardião devolve uma brasa de Héstia e uma lembrança
   if(b.kind!=='ares')for(let i=0;i<30;i++)fxp.push({x:b.x+b.w/2,y:b.y+b.h/2,vx:(Math.random()-.5)*2,vy:-1-Math.random()*2.5,life:60,max:60,col:'#ffb040',size:2,add:true});
@@ -1616,6 +1634,10 @@ function bossDeath(b){
     showMsg({n:'Flechas de Fogo',d:'Suas flechas carregadas agora queimam: causam +1 de dano e atravessam tudo.'})}
   else if(b.kind==='priest'){B17=null;boss=null;setDoor17(false);save.maxHp+=2;P.hp=maxHp();setTrack('explore');ents.forEach(e=>{if(e.summoned)e.dead=true});
     scene(...MEMS[9],after(()=>showMsg({n:'Coração da Cinza',d:'Vida máxima +2. Kalas caiu. A montanha perdeu a única voz que falava por ela.'})))}
+  else if(b.kind==='glutton'){B22=null;boss=null;setDoor22(false);ents.forEach(e=>{if(e.summoned)e.dead=true});save.maxHp++;P.hp=maxHp();save.ash+=60;updateAbil();setTrack('explore');persist();
+    say('Vida máxima +1 · +60 cinzas');giveCharm('vampiro')}
+  else if(b.kind==='automaton'){B23=null;boss=null;setDoor23(false);save.slots=Math.min(6,save.slots+1);updateAbil();setTrack('explore');persist();
+    say('Mais um espaço de amuleto');giveCharm('agil')}
   else if(b.kind==='digger'){B18=null;boss=null;setDoor18(false);setDreamExit(1,true);ents.forEach(e=>{if(e.summoned)e.dead=true});setTrack('explore');
     scene(...DREAM_MEMS[0],after(()=>giveWeapon('shovel')))}
   else if(b.kind==='fever'){B19=null;boss=null;setDoor19(false);setDreamExit(2,true);ents.forEach(e=>{if(e.summoned)e.dead=true});setTrack('explore');
@@ -1747,6 +1769,10 @@ function altarMenu(){
       <button class="btn" data-go="forge"${metBronte()?'':' disabled'}>Forja do Bronte${metBronte()?'':' (encontre o fundidor na Fundição)'}</button>
       <button class="btn" data-go="charms"${save.charms.length?'':' disabled'}>Amuletos (${slotsUsed()}/${save.slots})</button>
       <button class="btn" data-go="travel"${save.lit.length>1?'':' disabled'}>Viajar pelas brasas</button>
+      <button class="btn" data-go="bosses"${Object.values(KIND_KEY).some(k=>save[k])?'':' disabled'}>Ecos dos chefes (revanche)</button>
+      <button class="ghostbtn" data-go="ach">Conquistas</button>
+      <button class="ghostbtn" data-go="export">Exportar save (arquivo)</button>
+      <button class="ghostbtn" data-go="slotsave">Guardar cópia como save do criador</button>
       <button class="ghostbtn" data-go="resume">Sair</button></div>
     <p class="credit">Descansar enche vida e frascos, acende a bênção, salva o jogo, mas os inimigos voltam.</p>`);
 }
@@ -1815,15 +1841,19 @@ function travelTo(i){const s=STATUES[i];save.cp={x:s.x,y:s.y};persist();reset();
 function restAtAltar(){const i=P.onStatue;persist();reset();if(i>=0)P.onStatue=i;state='play';scr.hidden=true;sfx('altar');say('Você descansou · os mortos voltaram')}
 
 /* ===== Provas do sargento Brás (arena no Pátio do Estandarte) ===== */
+// ondas da arena sem fim: cada vez mais gente, furiosos e brutos
+function endlessWave(w){const pool=['guard','hop','ghoul','hound','harp','shade','bro','cult','zomb','garg','thing'],out=[];
+  for(let i=0;i<Math.min(3+Math.floor(w/2),8);i++)out.push(pool[(w*3+i*5)%pool.length]);if(w>=4&&w%2===0)out.push('brute');return out}
 const TRIALS=[
   {n:'Prova do Recruta',waves:[['guard','guard'],['hop','hop','guard'],['guard','guard','harp']],r:{bronze:3,ash:40}},
   {n:'Prova do Soldado',waves:[['ghoul','ghoul','guard'],['hound','hound','harp','harp'],['guard','guard','guard','bro']],r:{charm:'faminta',bronze:2}},
   {n:'Prova do Capitão',waves:[['guard','guard','guard','harp','harp'],['hound','hound','ghoul','ghoul','bro'],['thing','guard','guard','guard','shade','shade'],['guard','guard','guard','guard','hound','hound']],r:{charm:'sangue',bronze:4}},
+  {n:'Prova da Cinza Eterna',endless:true,waves:[],r:{}},
 ];
 function trialsMenu(){
   const rows=TRIALS.map((t,i)=>{const done=save.trials[i],open=i===0||save.trials[i-1];
     const rw=[t.r.bronze?t.r.bronze+' bronze':'',t.r.ash?t.r.ash+' cinzas':'',t.r.charm?'amuleto '+CHARMS[t.r.charm].n:''].filter(Boolean).join(' + ');
-    return `<div class="tech${done?' got':''}"><b>${t.n} · ${t.waves.length} ondas</b><span>Recompensa: ${done?'já recebida (pode treinar de novo)':rw}</span>
+    return `<div class="tech${done?' got':''}"><b>${t.n} · ${t.endless?'sem fim':t.waves.length+' ondas'}</b><span>Recompensa: ${t.endless?'2 bronze a cada 5 ondas; na onda 10, a Coroa de Cinza (raro). Recorde: onda '+((save.records||{}).arena||0):done?'já recebida (pode treinar de novo)':rw}</span>
       <button class="btn sm" data-go="trial" data-t="${i}"${open?'':' disabled'}>${open?'Começar':'Vença a anterior'}</button></div>`}).join('');
   menuOpen(`<span class="eyebrow">Sargento Brás · Pátio do Estandarte</span><h2>Provas da guarda</h2><p>Os mortos que vierem na prova não soltam cinzas. Se cair, a prova acaba.</p><div class="techs">${rows}</div><button class="ghostbtn" data-go="resume">Agora não</button>`);
 }
@@ -1838,12 +1868,17 @@ function updateTrial(){
   const T=TRIALS[trial.i];
   if(trial.t>0){trial.t--;if(trial.t===0){
       const xs=[243,247,251,255,258];
-      T.waves[trial.w].forEach((t,k)=>{const fly=t==='harp'||t==='shade',e=mkEnemy({t,x:xs[k%xs.length],y:fly?18:24,summoned:true});
-        e.trial=true;e.summoned=true;if(save.ng)e.hp*=1+.6*save.ng;ents.push(e);burst(e.x+e.w/2,e.y+e.h/2,'#c8322a',12,2,true)});
-      say('Onda '+(trial.w+1)+' de '+T.waves.length);sfx('roar')}
+      (T.endless?endlessWave(trial.w):T.waves[trial.w]).forEach((t,k)=>{const fly=t==='harp'||t==='shade'||t==='garg',e=mkEnemy({t,x:xs[k%xs.length],y:fly?18:24,summoned:true});
+        e.trial=true;e.summoned=true;e.hidden=false;if(save.ng)e.hp*=1+.6*save.ng;
+        if(T.endless){e.hp*=1+trial.w*.08;if(trial.w>=3&&Math.random()<.15+trial.w*.02){e.elite=true;e.hp*=1.8}}ents.push(e);burst(e.x+e.w/2,e.y+e.h/2,'#c8322a',12,2,true)});
+      say(T.endless?'Onda '+(trial.w+1):'Onda '+(trial.w+1)+' de '+T.waves.length);sfx('roar')}
     return}
   if(ents.some(e=>e.trial&&!e.dead))return;
   trial.w++;
+  if(T.endless){save.records=save.records||{};if(trial.w>(save.records.arena||0)){save.records.arena=trial.w;persist()}
+    if(trial.w%5===0){save.bronze+=2;say('Onda '+trial.w+' vencida · +2 bronze')}
+    if(trial.w===10&&!save.charms.includes('coroa'))giveCharm('coroa');
+    trial.t=70;return}
   if(trial.w<T.waves.length){trial.t=70;return}
   // prova vencida
   const first=!save.trials[trial.i];save.trials[trial.i]=1;trial=null;
@@ -1872,12 +1907,17 @@ function buyShop(id){
 }
 
 /* ===== Nova Noite+ ===== */
+const NG_NAMES=['','A noite que volta','A noite dos furiosos','A noite sem trégua','A noite veloz','A noite faminta','A noite sem fim'];
+const NG_RULES=['','Os mortos voltam mais fortes.','Muitos mortos voltam furiosos.','Todo golpe dos mortos tira 1 de vida a mais.','Os chefes lutam mais rápido.','As orbes de vida ficam raras.','Tudo isso junto, e cada vez mais forte.'];
 function newNightPlus(){
   const o=save,s=freshSave();
-  for(const k of ['lv','xp','weapons','weapon','ab','tech','charms','equip','slots','swordLv','flaskMax','flaskLv','maxHp','bronze','ash','taken','chests'])s[k]=JSON.parse(JSON.stringify(o[k]));
-  s.flags={ward:o.flags.ward};s.ng=(o.ng||0)+1;
+  for(const k of ['stats','records','ngBest','lv','xp','weapons','weapon','ab','tech','charms','equip','slots','swordLv','flaskMax','flaskLv','maxHp','bronze','ash','taken','chests'])s[k]=JSON.parse(JSON.stringify(o[k]));
+  s.flags={ward:o.flags.ward,lvInfo:1};s.ng=(o.ng||0)+1;
+  let gift='';if(s.ng>(s.ngBest||0)){s.ngBest=s.ng;s.bronze+=5;const pool=RARES.filter(id=>id!=='coroa'&&!s.charms.includes(id));
+    if(pool.length){const id=pool[Math.floor(Math.random()*pool.length)];s.charms.push(id);gift=' e '+CHARMS[id].n}gift='Primeira vez nesta noite: +5 bronze'+gift+'.'}
   save=s;seen=new Uint8Array(W*H);hints={};frames=0;reset();updateAbil();persist();
-  scene('Nova Noite+ '+s.ng,['O sol nasceu, e mesmo assim Teo acorda na cinza. A montanha guardou um pedaço da noite.','Os mortos voltam mais fortes. Mas Teo lembra de tudo o que aprendeu.'],()=>say('Ruínas de Olimpo'));
+  const nm=NG_NAMES[Math.min(s.ng,NG_NAMES.length-1)],rules=NG_RULES.slice(1,Math.min(s.ng,NG_RULES.length-1)+1).join(' ');
+  scene('Nova Noite+ '+s.ng+' · '+nm,['O sol nasceu, e mesmo assim Teo acorda na cinza. A montanha guardou um pedaço da noite.',rules+' Mas Teo lembra de tudo o que aprendeu.'].concat(gift?[gift]:[]),()=>say('Ruínas de Olimpo'));
 }
 /* ===================== O SUBMUNDO DE CINZA ===================== */
 // alvos de bronze: só flecha acerta; cada um abre um portão de barras ('G')
@@ -2106,7 +2146,10 @@ function updateBoss(){
   if(b.state==='dead'){bossDeath(b);return}
   if(b.flash>0)b.flash--;
   if(b.state.endsWith('W')&&b.t===WARN_T+1)sfx('warn');
-  ({mino:updMino,medusa:updMedusa,cerb:updCerb,ares:updAres,beast:updBeast,clock:updClock,banner:updBanner,weaver:updWeaver,heart:updHeart,widow:updWidow,colossus:updColossus,spirit:updSpirit,jailer:updJailer,statue:updStatue,queen:updQueen,tornado:updTornado,priest:updPriest,digger:updDigger,fever:updFever,echo:updEcho,dreamer:updDreamer})[b.kind](b);
+  const fn=({mino:updMino,medusa:updMedusa,cerb:updCerb,ares:updAres,beast:updBeast,clock:updClock,banner:updBanner,weaver:updWeaver,heart:updHeart,widow:updWidow,colossus:updColossus,spirit:updSpirit,jailer:updJailer,statue:updStatue,queen:updQueen,tornado:updTornado,priest:updPriest,digger:updDigger,fever:updFever,echo:updEcho,dreamer:updDreamer,glutton:updGlutton,automaton:updAutomaton})[b.kind];
+  fn(b);
+  // Noite+ 4 em diante: os guardiões lutam 25% mais rápido
+  if((save.ng||0)>=4&&frames%4===0&&boss===b&&b.state!=='sleep'&&b.state!=='dead')fn(b);
 }
 /* ===== chefes do leste ===== */
 function mkClock(){return{kind:'clock',name:'O GUARDIÃO DAS HORAS',x:201*TS,y:9*TS-66,w:28,h:66,hp:56,max:56,state:'sleep',t:0,dir:-1,vx:0,vy:0,flash:0,n:0}}
@@ -2495,19 +2538,20 @@ function updateItems(){
       if(overlap(it,P)){P.hp=Math.min(maxHp(),P.hp+1);burst(it.x+4,it.y+4,'#ff6a5a',14,2,true);sfx('orb');say('+1 de vida');return false}
       return true;
     }
-    if(it.id==='orb'||it.id==='arw'){it.vy=Math.min((it.vy||0)+G,4);if(moveY(it,it.vy,false)===1)it.vy=0}
+    if(it.id==='orb'||it.id==='arw'||it.id.startsWith('rare_')){it.vy=Math.min((it.vy||0)+G,4);if(moveY(it,it.vy,false)===1)it.vy=0}
     if(it.id==='ash'){
       const dx=P.x+5-(it.x+3),dy=P.y+11-(it.y+3),d=Math.hypot(dx,dy);it.age=(it.age||0)+1;
       if(d<(hasCharm('ima')?120:40)&&it.age>20){it.x+=dx/d*3;it.y+=dy/d*3}
       else{it.vy=Math.min((it.vy||0)+G,4);if(it.vx&&moveX(it,it.vx))it.vx=0;it.vx*=.96;if(moveY(it,it.vy,false)===1){it.vy=0;it.vx=0}}
       if(it.age>1500)return false;
-      if(overlap(it,P)&&it.age>20){save.ash++;sfx('blip');burst(it.x+3,it.y+3,'#ffd070',4,1,true);
+      if(overlap(it,P)&&it.age>20){save.ash+=hasCharm('ouro')&&Math.random()<.5?2:1;sfx('blip');burst(it.x+3,it.y+3,'#ffd070',4,1,true);
         if(!hints.ash){hints.ash=1;say('Cinzas: troque por técnicas com Damião, nas Ruínas')}return false}
       return true;
     }
     if(!overlap(it,P))return true;
     if(it.id==='arw'){P.arrows=Math.min(save.arrowsMax,P.arrows+3);sfx('blip');return false}
     if(it.id.startsWith('w_')){save.taken.push(it.id);burst(it.x+5,it.y+6,'#d0b0ff',24,2.5,true);giveWeapon(it.id.slice(2));return false}
+    if(it.id.startsWith('rare_')){burst(it.x+5,it.y+5,'#ffd070',30,3,true);fxp.push({wave:true,x:it.x+5,y:it.y+5,R:30,life:18,max:18,col:'#ffd070',vx:0,vy:0});say('Item raro!');giveCharm(it.id.slice(5));return false}
     if(it.id.startsWith('lem')){save.taken.push(it.id);sfx('altar');burst(it.x+5,it.y+6,'#c8b8ff',22,2,true);persist();readLem(it.id);return false}
     if(it.id.startsWith('eco')){save.taken.push(it.id);sfx('altar');burst(it.x+5,it.y+6,'#9ad8ff',20,2,true);persist();readEco(it.id);return false}
     if(it.id==='orb'){P.hp=Math.min(maxHp(),P.hp+1);burst(it.x+3,it.y+3,'#ff6a5a',6,1.5,true);sfx('orb');return false}
@@ -2692,6 +2736,8 @@ const CRACKS=[
   {id:'mina',x:331,y:54,msg:'Asas batendo lá embaixo... o chão da mina está rachado'},
   {id:'tmp',x:196,y:78,msg:'Brilho vermelho pelas frestas · algo mais fundo'},
   {id:'jar',x:213,y:38,msg:'O chão do jardim está rachado'},
+  {id:'adega',x:71,y:16,msg:'Cheiro de vinho velho sobe pelas frestas do chão'},
+  {id:'sotao',x:208,y:6,msg:'Engrenagens girando atrás da parede rachada · use a investida'},
 ];
 // boatos nos altares enquanto o Submundo não foi achado: cada um um pouco mais claro que o anterior
 const RUMORS=[
@@ -2777,7 +2823,7 @@ function buildTiles(){
   g.fillStyle='#ffb070';g.fillRect(9,6,1,1);g.fillRect(12,12,1,1);
   TILES.crack=c;
 }
-const palKey=(tx,ty)=>tx>=339?'dream':ty>=55?(ty>=79?(tx<=231?'sanct':'gstone'):tx<=71?'root':tx<=151?'prison':tx<=231?'sunk':'gstone'):(ty>=39&&tx>=149&&tx<179)?'heart':tx>=262?(ty<=8?'marble':ty<=27?'port':'mine'):tx>=179?(ty>=39?'nest':ty<=9?'bronze':tx<=187?'bronze':ty>=26?'garden':'guard'):(ty>=40&&tx<72)?'swamp':(ty>=27&&tx>=109)?(tx>=165?'temple':'styx'):tx>=152?'marble':tx>=109?'forge':(ty>=27&&tx<63)?'cave':tx>=46?'temple':'ruins';
+const palKey=(tx,ty)=>tx>=339?'dream':(tx>=66&&tx<=106&&ty>=18&&ty<=51)?'cave':(tx>=208&&tx<=252&&ty<=10)?'bronze':ty>=55?(ty>=79?(tx<=231?'sanct':'gstone'):tx<=71?'root':tx<=151?'prison':tx<=231?'sunk':'gstone'):(ty>=39&&tx>=149&&tx<179)?'heart':tx>=262?(ty<=8?'marble':ty<=27?'port':'mine'):tx>=179?(ty>=39?'nest':ty<=9?'bronze':tx<=187?'bronze':ty>=26?'garden':'guard'):(ty>=40&&tx<72)?'swamp':(ty>=27&&tx>=109)?(tx>=165?'temple':'styx'):tx>=152?'marble':tx>=109?'forge':(ty>=27&&tx<63)?'cave':tx>=46?'temple':'ruins';
 const hash=(x,y)=>((x*73856093)^(y*19349663))>>>0;
 
 function ridge(par,base,amp,f1,f2,seed,col){
@@ -3334,6 +3380,8 @@ function drawItems(){
     if(it.id==='hp'||it.id==='hp2'||it.id==='hp3'){ctx.fillStyle='#c8322a';ctx.fillRect(x+1,y+2,3,3);ctx.fillRect(x+6,y+2,3,3);ctx.fillRect(x,y+3,10,3);ctx.fillRect(x+1,y+6,8,2);ctx.fillRect(x+3,y+8,4,2);ctx.fillStyle='#ffb0a0';ctx.fillRect(x+2,y+3,1,1)}
     if(it.id==='jump'){ctx.fillStyle='#d9a441';ctx.fillRect(x,y+8,10,3);ctx.fillRect(x+6,y+4,3,5);ctx.fillStyle='#fff6e0';ctx.fillRect(x+1,y+2,4,2);ctx.fillRect(x,y+4,5,2);ctx.fillRect(x+2,y+6,3,1)}
     if(it.id==='dash'){ctx.fillStyle='#e2683c';ctx.beginPath();ctx.moveTo(x+5,y);ctx.lineTo(x+10,y+6);ctx.lineTo(x+5,y+12);ctx.lineTo(x,y+6);ctx.fill();ctx.fillStyle='#ffe2b0';ctx.fillRect(x+4,y+4,2,4)}
+    if(it.id.startsWith('rare_')){ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=`rgba(255,210,100,${.35+.2*Math.sin(frames*.15)})`;ctx.fillRect(x-5,y-5,20,20);ctx.restore();
+      ctx.fillStyle='#ffd070';ctx.beginPath();ctx.moveTo(x+5,y);ctx.lineTo(x+10,y+5);ctx.lineTo(x+5,y+10);ctx.lineTo(x,y+5);ctx.fill();ctx.fillStyle='#fff6d0';ctx.fillRect(x+4,y+3,2,2)}
     if(it.id.startsWith('lem')){const g=.5+.3*Math.sin(frames*.08);ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=`rgba(170,140,255,${g*.5})`;ctx.fillRect(x-4,y-4,18,20);ctx.restore();
       ctx.fillStyle='#e8e0ff';ctx.fillRect(x+1,y+1,8,10);ctx.fillStyle='#8a7ac8';ctx.fillRect(x+2,y+3,6,1);ctx.fillRect(x+2,y+5,5,1);ctx.fillRect(x+2,y+7,6,1)}
     if(it.id==='knives'){ctx.fillStyle='#6a4a2a';ctx.fillRect(x+1,y+8,3,3);ctx.fillRect(x+6,y+8,3,3);ctx.fillStyle='#d8dce8';ctx.fillRect(x+2,y+1,1,7);ctx.fillRect(x+7,y+1,1,7);ctx.fillStyle='#fff';ctx.fillRect(x+2,y,1,1);ctx.fillRect(x+7,y,1,1)}
@@ -3636,7 +3684,7 @@ function drawAres(b){
   if(big&&!o&&!OVR){ctx.globalAlpha=.25;ctx.fillStyle='#ff5a1a';ctx.fillRect(X-3,Y-6,b.w+6,b.h+6);ctx.globalAlpha=1}
 }
 function drawBosses(){if(B1)drawMino(B1);if(B2)drawMedusa(B2);if(B3)drawCerb(B3);if(B4)drawAres(B4);if(B5)drawBeast(B5);
-  if(B6)drawClock(B6);if(B7)drawBanner(B7);if(B8)drawWeaver(B8);if(B9)drawHeart(B9);if(B10)drawWidow(B10);if(B11)drawColossus(B11);for(const b of [B12,B13,B14,B15,B16,B17])if(b)drawSubBoss(b);for(const b of [B18,B19,B20,B21])if(b)drawDreamBoss(b)}
+  if(B6)drawClock(B6);if(B7)drawBanner(B7);if(B8)drawWeaver(B8);if(B9)drawHeart(B9);if(B10)drawWidow(B10);if(B11)drawColossus(B11);for(const b of [B12,B13,B14,B15,B16,B17])if(b)drawSubBoss(b);for(const b of [B18,B19,B20,B21,B22,B23])if(b)drawDreamBoss(b)}
 const jitW=b=>b.state.endsWith('W')?((frames>>1)%2?1:-1):0;
 function drawClock(b){
   if(!inView(b.x,b.y,90))return;const x=b.x+b.w/2+jitW(b),y=b.y+b.h,v=bossVariant(b);
@@ -4017,9 +4065,14 @@ const THOUGHTS={'Ruínas de Olimpo':'Toda noite eu acordo aqui. Toda noite a mes
   'Praça da Festa Sonhada':'A festa, parada no meio da música. Ninguém pisca.',
   'Espelho do Eco':'Tem alguém aqui com a minha letra nas mãos.',
   'Cume do Sonho':'Lá em cima, a montanha está de olhos fechados. Por enquanto.',
-  'Olho da Montanha':'Ela está acordada. E está com medo.'};
+  'Olho da Montanha':'Ela está acordada. E está com medo.',
+  'Adega do Templo':'O vinho da festa. Ninguém bebeu, e ninguém voltou para buscar.',
+  'Ossuário Esquecido':'Ossos sem nome, empilhados até o teto. Isto não é trabalho de coveiro.',
+  'Sótão do Relógio':'Tirésias guardava as peças de reserva aqui em cima. Algumas ainda se mexem.'};
 function storyTick(){
   if(state!=='play')return;
+  if(frames%60===0)checkAch();
+  if(frames%1800===0&&frames)autoSave();
   if(frames%30===0){const o=objective();if(o!==objLast){objLast=o;objT=420}}
   if(objT>0&&!showMap)objT--;
   if(thought){if(thought.wait>0)thought.wait--;else if(--thought.t<=0)thought=null}
@@ -4092,7 +4145,7 @@ function drawHud(){
     ctx.fillStyle=full?'#c8322a':'#2a1416';ctx.fillRect(x+1,y+2,5,5);ctx.fillStyle='#8a7a6a';ctx.fillRect(x+2,y,3,2);
     if(full){ctx.fillStyle='#ff9a8a';ctx.fillRect(x+2,y+3,1,1)}}
   if(P.drink>0){ctx.fillStyle='#ff9a6a';ctx.fillRect(6,33,Math.round(save.flaskMax*8*(1-P.drink/(hasCharm('gole')?22:36))),1)}
-  if(trial){const T=TRIALS[trial.i];text(T.n+' · onda '+Math.min(trial.w+1,T.waves.length)+'/'+T.waves.length,VW/2,22,'#e8b860','center')}
+  if(trial){const T=TRIALS[trial.i];text(T.n+' · onda '+(T.endless?(trial.w+1)+' (recorde '+((save.records||{}).arena||0)+')':Math.min(trial.w+1,T.waves.length)+'/'+T.waves.length),VW/2,22,'#e8b860','center')}
   for(let i=0;i<5;i++){const x=VW-68+i*12,y=7,lit=i<em;
     ctx.fillStyle=lit?'#ff6a1a':'#3a2a26';ctx.beginPath();ctx.moveTo(x,y+8);ctx.quadraticCurveTo(x-1,y+3,x+3,y);ctx.quadraticCurveTo(x+7,y+3,x+6,y+8);ctx.closePath();ctx.fill();
     if(lit){ctx.fillStyle='#ffd070';ctx.fillRect(x+2,y+4,2,3)}}
@@ -4140,7 +4193,7 @@ function render(){
   const cx=snap(cam.x+sx),cy=snap(cam.y+sy);
   drawBg(cx,cy);
   ctx.save();ctx.translate(-cx,-cy);
-  drawWorldBg(cx);drawDreamBg();drawCrystals();drawTiles(cx,cy);drawStains();drawBraziers();drawStatues();drawRifts();drawChests();drawTraps();drawTargets();drawSunkColumns();drawWatchers();drawThrone();outlined(drawNpcs);drawItems();outlined(drawEnemies);outlined(drawBosses);drawBossWarn();drawWaves();drawZones();drawShots();
+  drawWorldBg(cx);drawOptBg();drawDreamBg();drawCrystals();drawTiles(cx,cy);drawStains();drawBraziers();drawStatues();drawRifts();drawChests();drawTraps();drawTargets();drawSunkColumns();drawWatchers();drawThrone();outlined(drawNpcs);drawItems();outlined(drawEnemies);outlined(drawBosses);drawBossWarn();drawWaves();drawZones();drawShots();
   drawGhosts();drawParticles(false);if(state!=='dead')drawTrails();outlined(drawHero);
   ctx.restore();
   drawLighting(cx,cy);
@@ -4254,7 +4307,7 @@ const TRACKS={
   boss9:bossTrack(170,-7),
   boss10:bossTrack(126,4),
   boss11:bossTrack(140,-4),
-  boss12:bossTrack(148,-1),boss13:bossTrack(132,-6),boss14:bossTrack(140,6),boss15:bossTrack(156,1),boss16:bossTrack(164,-2),boss17:bossTrack(176,-5),boss18:bossTrack(124,-3),boss19:bossTrack(150,2),boss20:bossTrack(170,0),boss21:bossTrack(138,-7),
+  boss12:bossTrack(148,-1),boss13:bossTrack(132,-6),boss14:bossTrack(140,6),boss15:bossTrack(156,1),boss16:bossTrack(164,-2),boss17:bossTrack(176,-5),boss18:bossTrack(124,-3),boss19:bossTrack(150,2),boss20:bossTrack(170,0),boss21:bossTrack(138,-7),boss22:bossTrack(128,-4),boss23:bossTrack(158,3),
 };
 function schedule(){
   if(!AU.ctx||AU.ctx.state!=='running')return;
@@ -4288,14 +4341,119 @@ function titleScreen(){
   state='title';
   screen(`<span class="eyebrow">Um metroidvania sobre uma noite que nunca acaba</span><img class="logo" src="${LOGO}" alt=""><h2 class="sr">Cinzas do Olimpo</h2>
   <p>Há dez anos o sol não nasce na cidade de Olimpo. Toda noite o sino toca três vezes e os mortos se levantam da cinza. Você é o último coveiro, e esta noite vai descobrir quem toca o sino.</p>
-  <div class="row">${loadSaved()?'<button class="btn" data-go="cont">Continuar</button><button class="ghostbtn" data-go="start">Novo jogo</button>':'<button class="btn" data-go="start">Começar</button>'}</div>`);
+  <div class="row">${loadSaved()?'<button class="btn" data-go="cont">Continuar</button><button class="ghostbtn" data-go="start">Novo jogo</button>':'<button class="btn" data-go="start">Começar</button>'}</div>
+  ${creatorSlot()?'<div class="row"><button class="ghostbtn" data-go="slot">Carregar save do criador ('+slotDate(creatorSlot())+')</button></div>':''}
+  <div class="row">${loadSaved()?'<button class="ghostbtn" data-go="export">Exportar save</button>':''}<button class="ghostbtn" data-go="import">Importar save</button><button class="ghostbtn" data-go="ach">Conquistas</button></div>`);
+}
+/* save do criador: na primeira vez que esta versão abre, guarda uma cópia do save que já estava no navegador */
+const SLOT_KEY='cinzas-slot-criador';
+try{const cur=localStorage.getItem('cinzas-save2');if(cur&&!localStorage.getItem(SLOT_KEY))localStorage.setItem(SLOT_KEY,JSON.stringify({at:Date.now(),save:JSON.parse(cur)}))}catch(_){}
+function creatorSlot(){try{return JSON.parse(localStorage.getItem(SLOT_KEY)||'null')}catch(_){return null}}
+function loadCreatorSlot(){const c=creatorSlot();if(!c)return;
+  try{const cur=localStorage.getItem('cinzas-save2');if(cur)localStorage.setItem('cinzas-save-backup',cur);localStorage.setItem('cinzas-save2',JSON.stringify(c.save))}catch(_){}
+  continueFrom(c.save);say('Save do criador carregado')}
+function saveCreatorSlot(){autoSave();try{const cur=localStorage.getItem('cinzas-save2');if(cur){localStorage.setItem(SLOT_KEY,JSON.stringify({at:Date.now(),save:JSON.parse(cur)}));say('Cópia guardada como save do criador')}}catch(_){}state='play';scr.hidden=true}
+const slotDate=c=>{const d=new Date(c.at),p=n=>String(n).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)};
+/* save mais seguro: salva sozinho, pede ao navegador para não apagar, e dá para baixar ou carregar o save num arquivo */
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(_){}
+// não salva no meio da morte de um chefe nem durante cena (a recompensa ainda não foi entregue)
+const safeToSave=()=>save&&P&&(state==='play'||state==='msg'||state==='talk')&&!(boss&&boss.state==='dead')&&!trial;
+function autoSave(){if(safeToSave())persist()}
+addEventListener('pagehide',autoSave);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)autoSave()});
+const ACH_KEY='cinzas-ach';
+const st=k=>(save&&save.stats&&save.stats[k])||0;
+const ACH=[
+  {id:'kill1',n:'Primeira cova',d:'Derrote um inimigo.',ok:()=>st('kills')>=1},
+  {id:'kill100',n:'Coveiro de ofício',d:'Derrote 100 inimigos.',ok:()=>st('kills')>=100},
+  {id:'kill500',n:'Covas não bastam',d:'Derrote 500 inimigos.',ok:()=>st('kills')>=500},
+  {id:'elite25',n:'Contra a fúria',d:'Derrote 25 inimigos furiosos.',ok:()=>st('elites')>=25},
+  {id:'combo20',n:'Ritmo',d:'Faça um combo de 20 golpes.',ok:()=>st('combo')>=20},
+  {id:'combo50',n:'Sinfonia de cinza',d:'Faça um combo de 50 golpes.',ok:()=>st('combo')>=50},
+  {id:'lv10',n:'Calejado',d:'Chegue ao nível 10.',ok:()=>(save.lv||1)>=10},
+  {id:'lv20',n:'Veterano da noite',d:'Chegue ao nível 20.',ok:()=>(save.lv||1)>=20},
+  {id:'lv30',n:'Lenda de Olimpo',d:'Chegue ao nível 30.',ok:()=>(save.lv||1)>=30},
+  {id:'weap5',n:'Arsenal',d:'Tenha as 5 armas de corpo a corpo.',ok:()=>save.weapons.length>=5},
+  {id:'rare3',n:'Colecionador',d:'Tenha 3 itens raros.',ok:()=>rareCount()>=3},
+  {id:'rare8',n:'Tesouro do coveiro',d:'Tenha os 8 itens raros.',ok:()=>rareCount()>=8},
+  {id:'sino',n:'O sino calou',d:'Vença Andros, o sineiro.',ok:()=>save.boss4Dead},
+  {id:'kalas',n:'Manto vermelho',d:'Vença Kalas.',ok:()=>save.boss17Dead},
+  {id:'sonho',n:'O nome',d:'Termine o Sonho da Montanha.',ok:()=>!!save.flags.sonho},
+  {id:'ecos',n:'Bilhetes',d:'Leia os 12 Ecos.',ok:()=>ecoCount()>=ECOS.length},
+  {id:'lems',n:'Tudo o que ele esqueceu',d:'Encontre as 6 Lembranças de Teo.',ok:()=>lemCount()>=6},
+  {id:'opt',n:'Fundo do mapa',d:'Vença o Glutão e o Autômato.',ok:()=>save.boss22Dead&&save.boss23Dead},
+  {id:'hitless',n:'Intocável',d:'Vença um chefe sem apanhar.',ok:()=>st('hitless')>=1},
+  {id:'rematch10',n:'Ecos da luta',d:'Vença 10 revanches.',ok:()=>st('rematch')>=10},
+  {id:'arena10',n:'Cinza eterna',d:'Chegue à onda 10 da arena sem fim.',ok:()=>((save.records||{}).arena||0)>=10},
+  {id:'ng3',n:'Noites sem fim',d:'Chegue à Noite+ 3.',ok:()=>(save.ng||0)>=3}];
+function achGot(){try{return JSON.parse(localStorage.getItem(ACH_KEY)||'{}')}catch(_){return{}}}
+function checkAch(){
+  if(!save)return;const got=achGot();let changed=false;
+  for(const a of ACH){if(got[a.id])continue;let ok=false;try{ok=a.ok()}catch(_){}
+    if(ok){got[a.id]=Date.now();changed=true;say('Conquista: '+a.n);sfx('pickup');fxp.push({wave:true,x:P.x+5,y:P.y+11,R:40,life:20,max:20,col:'#ffd070',vx:0,vy:0})}}
+  if(changed)try{localStorage.setItem(ACH_KEY,JSON.stringify(got))}catch(_){}
+}
+function achMenu(back){
+  const got=achGot(),n=ACH.filter(a=>got[a.id]).length;
+  const rows=ACH.map(a=>`<div class="tech${got[a.id]?' got':''}"><b>${got[a.id]?'✔ ':''}${a.n}</b><span>${a.d}</span></div>`).join('');
+  const s=save&&save.stats||{};
+  const html=`<span class="eyebrow">Conquistas · ${n} de ${ACH.length}</span><h2>Conquistas</h2>
+    ${save?`<p>Inimigos: ${s.kills||0} · furiosos: ${s.elites||0} · maior combo: ${s.combo||0} · chefes sem apanhar: ${s.hitless||0} · revanches: ${s.rematch||0} · arena: onda ${(save.records||{}).arena||0}</p>`:''}
+    <div class="techs">${rows}</div><button class="btn" data-go="${back}">Voltar</button>`;
+  if(back==='title')screen(html);else menuOpen(html);
+}
+/* ===== modo chefe: revanche contra qualquer chefe já vencido, com recorde de tempo ===== */
+const KIND_KEY={mino:'bossDead',medusa:'boss2Dead',cerb:'boss3Dead',ares:'boss4Dead',beast:'boss5Dead',clock:'boss6Dead',banner:'boss7Dead',weaver:'boss8Dead',heart:'boss9Dead',widow:'boss10Dead',colossus:'boss11Dead',
+  spirit:'boss12Dead',jailer:'boss13Dead',statue:'boss14Dead',queen:'boss15Dead',tornado:'boss16Dead',priest:'boss17Dead',digger:'boss18Dead',fever:'boss19Dead',echo:'boss20Dead',dreamer:'boss21Dead',glutton:'boss22Dead',automaton:'boss23Dead'};
+const REMATCH={mino:[mkMino,b=>B1=b,93,15],medusa:[mkMedusa,b=>B2=b,166,13],cerb:[mkCerb,b=>B3=b,153,37],ares:[mkAres,b=>B4=b,168,37],beast:[mkBeast,b=>B5=b,52,53],
+  clock:[mkClock,b=>B6=b,193,8],banner:[mkBanner,b=>B7=b,245,24],weaver:[mkWeaver,b=>B8=b,240,53],heart:[mkHeart,b=>B9=b,158,53],widow:[mkWidow,b=>B10=b,312,7],colossus:[mkColossus,b=>B11=b,282,53],
+  spirit:[mkSpirit,b=>B12=b,56,77],jailer:[mkJailer,b=>B13=b,136,77],statue:[mkStatue,b=>B14=b,210,77],queen:[mkQueen,b=>B15=b,240,97],tornado:[mkTornado,b=>B16=b,104,97],priest:[mkPriest,b=>B17=b,27,97],
+  digger:[mkDigger,b=>B18=b,436,97],fever:[mkFever,b=>B19=b,364,83],echo:[mkEcho,b=>B20=b,430,57],dreamer:[mkDreamer,b=>B21=b,368,27],glutton:[mkGlutton,b=>B22=b,86,50],automaton:[mkAutomaton,b=>B23=b,236,9]};
+const fmtT=f=>{const s=Math.round(f/60);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function bossMenu(){
+  const rec=(save.records||{}).boss||{};
+  const rows=Object.keys(REMATCH).filter(k=>save[KIND_KEY[k]]).map(k=>{const nm=cap(REMATCH[k][0]().name);
+    return `<div class="tech${rec[k]?' got':''}"><b>${nm}</b><span>${rec[k]?'Recorde: '+fmtT(rec[k]):'Primeira revanche: +40 cinzas e 1 bronze'}</span><button class="btn sm" data-go="rematch" data-t="${k}">Enfrentar</button></div>`}).join('');
+  menuOpen(`<span class="eyebrow">Ecos dos chefes</span><h2>Revanche</h2><p>Os chefes voltam um pouco mais fortes. Ao vencer, você volta para este altar.</p><div class="techs">${rows}</div><button class="btn" data-go="altar">Voltar</button>`);
+}
+function startRematch(kind){
+  const r=REMATCH[kind];if(!r||!save[KIND_KEY[kind]])return;
+  persist();reset();state='play';scr.hidden=true;ents.forEach(e=>e.dead=true);
+  const b=r[0]();b.max=Math.round(b.max*1.25*(1+.5*(save.ng||0)));b.hp=b.max;r[1](b);
+  P.x=r[2]*TS+3;P.y=(r[3]+1)*TS-22;P.vx=P.vy=0;P.onStatue=-1;P.riftCd=60;cam.x=P.x-VW/2;cam.y=P.y-VH/2;clampCam();
+  if(kind==='ares'){b.state='intro';b.t=50;setDoor4(true)}
+  rematch={kind,t:0};say('Revanche: '+cap(b.name));sfx('roar');
+}
+function endRematch(b){
+  const k=rematch.kind,t=rematch.t;rematch=null;
+  save.records=save.records||{};save.records.boss=save.records.boss||{};save.stats=save.stats||{};
+  const first=!save.records.boss[k],best=!first&&t<save.records.boss[k];
+  if(first||best)save.records.boss[k]=t;save.stats.rematch=(save.stats.rematch||0)+1;
+  if(first){save.ash+=40;save.bronze++}
+  persist();reset();
+  showMsg({n:'Revanche vencida: '+cap(b.name),d:'Tempo: '+fmtT(t)+(first?' · primeira vitória: +40 cinzas e 1 bronze':best?' · novo recorde!':' · recorde: '+fmtT(save.records.boss[k]))});
+}
+function exportSave(){
+  if(save&&state!=='title')autoSave();
+  const raw=localStorage.getItem('cinzas-save2');if(!raw){say('Ainda não há save');return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([raw],{type:'application/json'}));
+  const d=new Date(),p=n=>String(n).padStart(2,'0');a.download='cinzas-do-olimpo-save-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'.json';
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+}
+function importSave(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+  inp.onchange=()=>{const f=inp.files&&inp.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{try{const s=JSON.parse(r.result);if(!s||!s.ab||!s.cp)throw 0;localStorage.setItem('cinzas-save2',JSON.stringify(s));titleScreen();
+      panel.insertAdjacentHTML('afterbegin','<p class="credit">Save carregado. Aperte Continuar.</p>')}catch(_){titleScreen();panel.insertAdjacentHTML('afterbegin','<p class="credit">Esse arquivo não é um save do Cinzas do Olimpo.</p>')}};
+    r.readAsText(f)};
+  inp.click();
 }
 function victory(){
   state='win';setTrack(null);sfx('pickup');const m=Math.floor(frames/3600),s=Math.floor(frames/60)%60;
-  const nb=['bossDead','boss2Dead','boss3Dead','boss4Dead','boss5Dead','boss6Dead','boss7Dead','boss8Dead','boss9Dead','boss10Dead','boss11Dead','boss12Dead','boss13Dead','boss14Dead','boss15Dead','boss16Dead','boss17Dead','boss18Dead','boss19Dead','boss20Dead','boss21Dead'].filter(k=>save[k]).length;
+  const nb=['bossDead','boss2Dead','boss3Dead','boss4Dead','boss5Dead','boss6Dead','boss7Dead','boss8Dead','boss9Dead','boss10Dead','boss11Dead','boss12Dead','boss13Dead','boss14Dead','boss15Dead','boss16Dead','boss17Dead','boss18Dead','boss19Dead','boss20Dead','boss21Dead','boss22Dead','boss23Dead'].filter(k=>save[k]).length;
   const rel=['hp','hp2','hp3','jump','dash','wall','pg1','pg2','pg3','pg4'].filter(k=>save.taken.includes(k)).length,tec=TECHS.filter(t=>save.tech[t.id]).length;
   screen(`<span class="eyebrow">Fim</span><h2>Cinzas do Olimpo</h2>
-  ${save.boss17Dead?'':'<p><b>Pista:</b> o culto ainda vive lá embaixo. Procure chãos rachados soltando fumaça: no pântano, no rio de cinza e no fundo da mina.</p>'}<p>${endingTag()} ${save.flags.sonho?'Você terminou o Sonho da Montanha. ':''}Chefes vencidos: ${nb} de 21 · ecos: ${ecoCount()} de ${ECOS.length} · técnicas: ${tec} de 4 · relíquias: ${rel} de 10 · baús: ${save.chests.length} de ${CHESTS.length} · amuletos: ${save.charms.length} de ${Object.keys(CHARMS).length} · vida máxima ${save.maxHp}${save.flags.bell?' · Lino voltou para casa':''}. Tempo: ${m}:${String(s).padStart(2,'0')}.</p>
+  ${save.boss17Dead?'':'<p><b>Pista:</b> o culto ainda vive lá embaixo. Procure chãos rachados soltando fumaça: no pântano, no rio de cinza e no fundo da mina.</p>'}<p>${endingTag()} ${save.flags.sonho?'Você terminou o Sonho da Montanha. ':''}Chefes vencidos: ${nb} de 23 · ecos: ${ecoCount()} de ${ECOS.length} · técnicas: ${tec} de 4 · relíquias: ${rel} de 10 · baús: ${save.chests.length} de ${CHESTS.length} · amuletos: ${save.charms.length} de ${Object.keys(CHARMS).length} · vida máxima ${save.maxHp}${save.flags.bell?' · Lino voltou para casa':''}. Tempo: ${m}:${String(s).padStart(2,'0')}.</p>
   <p>Obrigado por jogar.</p>
   <div class="row"><button class="btn" data-go="ngplus">Nova Noite+</button><button class="ghostbtn" data-go="start">Começar do zero</button></div>`);
 }
@@ -4303,7 +4461,7 @@ function updateAbil(){
   const a=['<b>'+curW().n+'</b>'+(save.weapons.length>1?' (T troca)':''),'<b>Golpe de queda</b>','<b>Erupção</b>'];if(save.ab.jump)a.push('<b>Pulo duplo</b>');if(save.ab.dash)a.push('<b>Investida</b>');if(save.ab.wall)a.push('<b>Salto na parede</b>');if(save.ab.beast)a.push('<b>Erupção maior</b>');if(save.ab.knives)a.push('<b>Adagas</b>');if(save.ab.bow)a.push('<b>Arco</b>');if(save.ab.fire)a.push('<b>Flechas de fogo</b>');if(save.ab.glide)a.push('<b>Planar</b>');if(save.ab.echo)a.push('<b>Passo do Eco</b>');
   for(const t of TECHS)if(save.tech[t.id])a.push('<b>'+t.n+'</b>');
   if(save.swordLv)a.push('<b>Espada +'+save.swordLv+'</b>');a.push('<b>'+save.flaskMax+' frascos</b>');
-  if(save.equip.length)a.push('Amuletos: '+save.equip.map(id=>'<b>'+CHARMS[id].n+'</b>').join(', '));if(save.ng)a.push('<b>Noite+ '+save.ng+'</b>');
+  if(save.equip.length)a.push('Amuletos: '+save.equip.map(id=>'<b>'+CHARMS[id].n+'</b>').join(', '));if(save.ng)a.push('<b>Noite+ '+save.ng+' · '+NG_NAMES[Math.min(save.ng,NG_NAMES.length-1)]+'</b>');
   document.getElementById('abil').innerHTML='Habilidades: '+a.join(' · ')+' &nbsp; Nível <b>'+(save.lv||1)+'</b> · Vida máx. <b>'+maxHp()+'</b>';
 }
 /* Damião: troca pergaminho + cinzas por técnica */
@@ -4324,6 +4482,8 @@ panel.addEventListener('click',e=>{
   if(b.dataset.go==='cont'){const s=loadSaved();if(s){continueFrom(s);say(zoneAt(save.cp.x,save.cp.y))}}
   if(b.dataset.go==='resume'){state='play';scr.hidden=true}
   const g=b.dataset.go,t=b.dataset.t;
+  if(g==='export')exportSave();if(g==='import')importSave();if(g==='slot')loadCreatorSlot();if(g==='slotsave')saveCreatorSlot();
+  if(g==='ach')achMenu(state==='title'?'title':'altar');if(g==='title')titleScreen();if(g==='bosses')bossMenu();if(g==='rematch')startRematch(t);
   if(g==='rest')restAtAltar();if(g==='forge')forgeMenu();if(g==='charms')charmMenu();if(g==='travel')travelMenu();if(g==='altar')altarMenu();
   if(g==='buy')buyForge(t);if(g==='equip')toggleCharm(t);if(g==='go')travelTo(+t);if(g==='pick')travelMenu(+t);if(g==='trial')startTrial(+t);if(g==='shop')buyShop(t);if(g==='ngplus')newNightPlus();
   if(b.dataset.go==='learn'){const t=TECHS.find(x=>x.id===b.dataset.t);
@@ -4417,6 +4577,96 @@ function endingLines(){
    a cidade, a noite repetida e o que Teo esquece toda manhã. Quatro faixas, de baixo para cima:
    A (y86-97) Margem, Casa de Eurídice e Cemitério de Dimas · B (y60-83) Estrada da Caravana e Quarto da Febre
    C (y30-57) Praça da Festa Sonhada e Espelho do Eco · D (y3-27) Cume do Sonho e Olho da Montanha */
+/* ===================== ÁREAS OPCIONAIS ===================== */
+// Adega do Templo (chão rachado no templo) e, embaixo, o Ossuário Esquecido com o Glutão; Sótão do Relógio (parede rachada na Sala das Horas) com o Autômato
+function optZone(tx,ty){
+  if(tx>=66&&tx<=106&&ty>=18&&ty<=30)return'Adega do Templo';
+  if(tx>=100&&tx<=102&&ty>=31&&ty<=35)return'Ossuário Esquecido';
+  if(tx>=74&&tx<=106&&ty>=36&&ty<=50)return tx<=90?'Covil do Glutão':'Ossuário Esquecido';
+  if(tx>=208&&tx<=251&&ty<=10)return tx>=231?'Engrenagem Mestra':'Sótão do Relógio';
+  return null;
+}
+function setDoor22(c){for(let r=44;r<=50;r++)grid[r][91]=c?'#':'.'}
+function setDoor23(c){for(let r=3;r<=9;r++)grid[r][231]=c?'#':'.'}
+function buildOptional(f){
+  // Adega: x66-105, y18-30; entra pelo chão rachado do templo (x70-72)
+  f(70,16,3,2,'C');f(66,18,40,13,'.');
+  f(69,18,5,1,'=');f(74,21,4,1,'=');f(69,24,4,1,'=');f(74,27,4,1,'=');f(70,29,3,1,'=');
+  f(80,24,4,1,'=');f(88,20,5,1,'=');f(86,27,6,1,'=');f(95,23,4,1,'=');
+  f(82,28,2,3,'#');f(99,28,3,3,'#');f(90,30,4,1,'W');
+  // poço para o ossuário, com degraus para voltar
+  f(100,31,3,5,'.');f(100,34,3,1,'=');
+  // Ossuário: x92-106 (y36-50) e o covil do Glutão x74-90, separado pela porta x91
+  f(74,36,33,15,'.');f(91,36,1,8,'#');
+  f(100,37,3,1,'=');f(103,40,3,1,'=');f(99,43,3,1,'=');f(103,46,3,1,'=');f(99,49,3,1,'=');
+  // Sótão do Relógio: x210-251, y1-9; parede rachada na Sala das Horas; arena do Autômato x232-251
+  f(208,5,2,4,'C');f(210,1,42,9,'.');f(231,1,1,2,'#');
+  f(214,7,4,1,'=');f(220,5,4,1,'=');f(226,7,3,1,'=');f(217,9,6,1,'^');
+}
+ENEMY_SPAWNS.push({t:'ghoul',x:80,y:30},{t:'zomb',x:93,y:30},{t:'hop',x:103,y:30},{t:'bro',x:89,y:19},
+  {t:'hop',x:95,y:50},{t:'shadow',x:104,y:50},{t:'zomb',x:94,y:50},
+  {t:'garg',x:224,y:3},{t:'harp',x:215,y:3},{t:'bro',x:228,y:9});
+CHESTS.push({id:'co1',x:103,y:30,r:{bronze:4}},{id:'co2',x:96,y:22,r:{charm:'ouro'}},{id:'co3',x:105,y:50,r:{bronze:5}},{id:'co4',x:212,y:9,r:{charm:'trevo'}});
+function drawOptBg(){
+  const R=(x,y,w,h)=>ctx.fillRect(x*TS,y*TS,w*TS,h*TS);let g;
+  if(cam.x<107*TS&&cam.x+VW>66*TS&&cam.y<51*TS&&cam.y+VH>18*TS){
+    g=ctx.createLinearGradient(0,18*TS,0,31*TS);g.addColorStop(0,'#140a0c');g.addColorStop(1,'#2a1416');ctx.fillStyle=g;R(66,18,40,13);R(100,31,3,5);
+    ctx.fillStyle='#1e0e10';for(let i=0;i<9;i++){const x=(68+i*4)*TS,y=26*TS;ctx.beginPath();ctx.ellipse(x+12,y+20,12,16,0,0,7);ctx.fill();ctx.fillStyle='#2a1416';ctx.fillRect(x,y+12,24,2);ctx.fillRect(x,y+26,24,2);ctx.fillStyle='#1e0e10'}
+    g=ctx.createLinearGradient(0,36*TS,0,51*TS);g.addColorStop(0,'#0c0c10');g.addColorStop(1,'#18161c');ctx.fillStyle=g;R(74,36,33,15);
+    ctx.fillStyle='#2a2630';for(let y=37;y<50;y+=2)for(let x=75;x<106;x+=2){if(hash(x,y)%3)continue;ctx.beginPath();ctx.arc(x*TS+8,y*TS+8,3,0,7);ctx.fill();ctx.fillRect(x*TS+6,y*TS+10,5,2)}}
+  if(cam.x<252*TS&&cam.x+VW>208*TS&&cam.y<11*TS){
+    g=ctx.createLinearGradient(0,1*TS,0,10*TS);g.addColorStop(0,'#1a120a');g.addColorStop(1,'#2e2214');ctx.fillStyle=g;R(210,1,42,9);
+    for(let i=0;i<6;i++){const cx=(214+i*7)*TS,cy=(3+i%2*3)*TS,r=14+i%3*6;ctx.save();ctx.translate(cx,cy);ctx.rotate(frames*.01*(i%2?1:-1));ctx.fillStyle='#3a2a16';
+      for(let k=0;k<8;k++){ctx.rotate(Math.PI/4);ctx.fillRect(r-2,-3,6,6)}ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fill();ctx.fillStyle='#1a120a';ctx.beginPath();ctx.arc(0,0,r*.35,0,7);ctx.fill();ctx.restore()}}
+}
+function mkGlutton(){return{kind:'glutton',name:'O GLUTÃO DO OSSUÁRIO',x:80*TS,y:51*TS-52,w:40,h:52,hp:130,max:130,state:'sleep',t:0,dir:1,vx:0,vy:0,flash:0,n:0}}
+function mkAutomaton(){return{kind:'automaton',name:'O AUTÔMATO DO SÓTÃO',x:244*TS,y:10*TS-46,w:34,h:46,hp:140,max:140,state:'sleep',t:0,dir:-1,vx:0,vy:0,flash:0,n:0}}
+// Glutão: mordida em investida, vomita ossos, pancada no chão, chama zumbis e depois come os zumbis para se curar
+function updGlutton(b){
+  const floorY=51*TS,L=74*TS,R=91*TS;
+  if(b.state==='sleep'){if(P.x<90*TS&&P.x>74*TS&&P.y>36*TS&&P.y<floorY){b.state='intro';b.t=70;setDoor22(true);say('O Glutão do Ossuário');shake=8;sfx('roar')}return}
+  const pcx=P.x+P.w/2,bcx=b.x+b.w/2,rage=b.hp<=b.max/2?1.3:1,d=pcx-bcx;
+  healDrop(b,75,90,37*TS,'Uma romã rolou dos ossos! (+1 de vida)');
+  if(b.state==='idle'||b.state.endsWith('W'))b.dir=Math.sign(d)||b.dir;
+  switch(b.state){
+    case'intro':b.vx=0;b.t--;if(b.t<=0){b.state='idle';b.t=40}break;
+    case'idle':b.vx=Math.abs(d)>30?Math.sign(d)*.5*rage:0;b.t--;
+      if(b.t<=0){const seq=['bite','vomit','slam','call','bite','eat','vomit','slam'],nx=seq[b.n++%seq.length];b.vx=0;b.state=nx+'W';b.t={bite:26,vomit:28,slam:30,call:34,eat:30}[nx];sfx(nx==='bite'?'charge':'charge2')}break;
+    case'biteW':b.vx=0;b.t--;if(b.t<=0){b.state='bite';b.t=30;b.vx=b.dir*5*rage;sfx('dash')}break;
+    case'bite':b.t--;if(overlap(b,P))hurtPlayer(1,b);if(b.t<=0){b.vx=0;b.state='rec';b.t=40}break;
+    case'vomitW':b.vx=0;b.t--;if(b.t<=0){const n=rage>1?6:4;for(let i=0;i<n;i++)shots.push({kind:'boulder',x:bcx-7,y:b.y+10,w:14,h:14,vx:d/60+(i-(n-1)/2)*1,vy:-4.5-Math.random(),g:.25,life:200});sfx('hiss');b.state='idle';b.t=Math.round(50/rage)}break;
+    case'slamW':b.vx=0;b.t--;if(b.t<=0){groundWaves(b,floorY,3,100);shake=10;sfx('slam');b.state='rec';b.t=46}break;
+    case'callW':b.vx=0;b.t--;if(b.t<=0){summonAt('zomb',[[76,50],[89,50]]);b.state='idle';b.t=60}break;
+    case'eatW':b.vx=0;b.t--;if(b.t<=0){let n=0;for(const e of ents)if(!e.dead&&e.summoned&&Math.abs(e.x-b.x)<110){e.dead=true;mkCorpse(e,b.dir);b.hp=Math.min(b.max,b.hp+10);n++}
+      if(n){say('O Glutão devora os mortos!');sfx('kill')}b.state='idle';b.t=40}break;
+    case'rec':b.vx=0;b.t--;if(b.t<=0){b.state='idle';b.t=Math.round(30/rage)}break;
+  }
+  b.vy=Math.min(b.vy+G,MAXF);if(moveX(b,b.vx)&&b.state==='bite'){b.vx=0;b.state='rec';b.t=50;shake=6;sfx('slam')}b.x=Math.max(L,Math.min(R-b.w,b.x));
+  if(moveY(b,b.vy,false)===1)b.vy=0;
+  if(b.state!=='bite')pushOut(b);
+}
+// Autômato: engrenagens rolando no chão, vapor que sobe do piso, soco em investida e pêndulos caindo do teto
+function updAutomaton(b){
+  const floorY=10*TS,L=232*TS,R=252*TS;
+  if(b.state==='sleep'){if(P.x>233*TS&&P.x<252*TS&&P.y<floorY){b.state='intro';b.t=70;setDoor23(true);say('O Autômato do Sótão');shake=8;sfx('roar')}return}
+  const pcx=P.x+P.w/2,bcx=b.x+b.w/2,rage=b.hp<=b.max/2?1.3:1,d=pcx-bcx;
+  healDrop(b,233,251,2*TS,'Uma romã caiu das vigas! (+1 de vida)');
+  if(b.state==='idle'||b.state.endsWith('W'))b.dir=Math.sign(d)||b.dir;
+  switch(b.state){
+    case'intro':b.vx=0;b.t--;if(b.t<=0){b.state='idle';b.t=40}break;
+    case'idle':b.vx=Math.abs(d)>40?Math.sign(d)*.6*rage:0;b.t--;
+      if(b.t<=0){const seq=['gears','steam','punch','pendulum','gears','punch'],nx=seq[b.n++%seq.length];b.vx=0;b.state=nx+'W';b.t={gears:26,steam:30,punch:22,pendulum:28}[nx];sfx(nx==='punch'?'charge':'charge2')}break;
+    case'gearsW':b.vx=0;b.t--;if(b.t<=0){const n=rage>1?3:2;for(let i=0;i<n;i++)shots.push({kind:'gear',x:b.dir>0?b.x+b.w:b.x-10,y:floorY-10,w:10,h:10,vx:b.dir*(2.6-i*.7),vy:0,g:0,life:300});sfx('rattle');b.state='idle';b.t=Math.round(45/rage)}break;
+    case'steamW':b.vx=0;b.t--;if(b.t<=0){[pcx-30,pcx+30].forEach(x=>zones.push({kind:'pillar',x:x-10,y:floorY-60,w:20,h:60,warn:40,live:0,fy:floorY}));b.state='idle';b.t=Math.round(50/rage)}break;
+    case'punchW':b.vx=0;b.t--;if(b.t<=0){b.state='punch';b.t=24;b.vx=b.dir*5.5*rage;sfx('dash')}break;
+    case'punch':b.t--;if(overlap(b,P))hurtPlayer(1,b);if(b.t<=0){b.vx=0;b.state='rec';b.t=40}break;
+    case'pendulumW':b.vx=0;b.t--;if(b.t<=0){rainZones(rage>1?7:5,233,251,1*TS+2,floorY);b.state='idle';b.t=Math.round(50/rage)}break;
+    case'rec':b.vx=0;b.t--;if(b.t<=0){b.state='idle';b.t=Math.round(30/rage)}break;
+  }
+  b.vy=Math.min(b.vy+G,MAXF);if(moveX(b,b.vx)&&b.state==='punch'){b.vx=0;b.state='rec';b.t=50;shake=8;sfx('slam')}b.x=Math.max(L,Math.min(R-b.w,b.x));
+  if(moveY(b,b.vy,false)===1)b.vy=0;
+  if(b.state!=='punch')pushOut(b);
+}
 function dreamZone(tx,ty){
   if(ty>=84)return tx<=372?'Margem do Sonho':tx<=428?'Casa de Eurídice':'Cemitério de Dimas';
   if(ty>=58)return tx<=369?'Quarto da Febre':'Estrada da Caravana';
@@ -4455,7 +4705,6 @@ function buildDream(f){
   f(405,27,8,1,'^');f(406,24,5,1,'=');f(420,27,4,1,'^');f(420,24,4,1,'=');
   for(let n=1;n<=3;n++)setDreamExit(n,!!save['boss'+(17+n)+'Dead']);
 }
-STATUES.push({x:350,y:97},{x:446,y:83},{x:360,y:57},{x:440,y:27});
 ENEMY_SPAWNS.push(
   {t:'zomb',x:380,y:97},{t:'ghoul',x:393,y:97},{t:'hound',x:404,y:97},{t:'shade',x:396,y:90},{t:'guard',x:414,y:97},{t:'zomb',x:424,y:97},
   {t:'guard',x:440,y:83},{t:'garg',x:432,y:70},{t:'harp',x:418,y:70},{t:'brute',x:405,y:83},{t:'cult',x:386,y:83},{t:'ghoul',x:380,y:83},{t:'shade',x:377,y:70},{t:'hound',x:426,y:83},
@@ -4624,6 +4873,8 @@ function drawDreamBoss(b){
     if(b.state==='combo'){k='kAtk';fr=Math.floor((36-b.t)/3)}else if(b.state==='air'||b.state==='plunge'){k='kJump';fr=b.vy<0?0:2}else if(b.state==='dash'||Math.abs(b.vx)>.3){k='kRun';fr=Math.floor(frames/5)}
     if(!OVR&&b.p2){ctx.globalAlpha=.35;sprA(k,fr,x-b.dir*6,y,b.dir,'trail',0,1.1);ctx.globalAlpha=1}
     sprA(k,fr,x+jit,y,b.dir,v||'violet',0,1.1);if(b.state==='rec')stars(b)}
+  else if(b.kind==='glutton'){shadow(x,y,20);const fr=b.state.endsWith('W')||b.state==='bite'?2:Math.abs(b.vx)>.1?Math.floor(frames/10)%2:0;sprA('gZomb',fr,x+jit,y,b.dir,v||'pale',0,1.8);if(b.state==='rec')stars(b)}
+  else if(b.kind==='automaton'){shadow(x,y,16);sprA('gTitan',b.state.endsWith('W')?1:0,x+jit,y,b.dir,v||'steel',0,.5);if(b.state==='rec')stars(b)}
   else if(b.kind==='dreamer'){
     const cx=b.x+b.w/2,cy=b.y+b.h/2,r=b.w/2;
     if(OVR){ctx.fillStyle=OVR;ctx.beginPath();ctx.arc(cx,cy,r+1,0,7);ctx.fill();return}
@@ -4676,6 +4927,18 @@ function readLem(id){
       showMsg({n:'Tudo o que ele esqueceu',d:'Teo lembrou da mãe, do velho Dimas e do pai. Vida máxima +1.'})}});
 }
 Object.assign(CHARMS,{febre:{n:'Febre Contida',c:2,d:'Com 1 de vida, seu dano dobra.'}});
+// itens raros: caem dos inimigos (bem mais dos furiosos), vêm de baús e de chefes opcionais, e a Coroa vem da arena sem fim
+const RARES=['vampiro','espinho','ouro','agil','lagrima','trevo','sino2','coroa'];
+Object.assign(CHARMS,{
+  vampiro:{n:'Dente do Vampiro (raro)',c:2,d:'A cada 15 golpes acertados, recupera 1 de vida.'},
+  espinho:{n:'Coroa de Espinhos (raro)',c:1,d:'Quem acerta você leva 2 de dano de volta.'},
+  ouro:{n:'Moeda de Caronte (raro)',c:1,d:'Metade das cinzas que você pega vale o dobro.'},
+  agil:{n:'Sandálias de Hermes (raro)',c:1,d:'Você corre 20% mais rápido.'},
+  lagrima:{n:'Lágrima de Eurídice (raro)',c:2,d:'Os frascos curam 1 a mais.'},
+  trevo:{n:'Trevo de Cinza (raro)',c:1,d:'Itens raros caem três vezes mais, e orbes de vida caem mais.'},
+  sino2:{n:'Sino Rachado (raro)',c:1,d:'Ao subir de nível, uma onda de som machuca todos os inimigos por perto.'},
+  coroa:{n:'Coroa de Cinza (raro)',c:3,d:'Todos os seus golpes causam 25% a mais.'}});
+const rareCount=()=>RARES.filter(id=>save.charms.includes(id)).length;
 // quem mora no sonho
 NPCS.push(
   {id:'teokid',name:'Teo, aos nove anos',x:356,y:97,kid:true,ghost:true,st:()=>save.boss20Dead?3:save.boss19Dead?2:save.boss18Dead?1:0},
@@ -4753,6 +5016,8 @@ Object.assign(CHARMS,{
 CHESTS.push({id:'c23',x:65,y:38,r:{bronze:3}},{id:'c24',x:79,y:15,r:{charm:'olho'}},{id:'c25',x:101,y:77,r:{charm:'aljava'}},{id:'c26',x:64,y:85,r:{bronze:4}},
   {id:'c27',x:300,y:97,r:{ash:60}},{id:'c28',x:39,y:77,r:{bronze:3}},{id:'c29',x:171,y:69,r:{bronze:3}},{id:'c30',x:3,y:97,r:{bronze:5}});
 STATUES.push({x:4,y:77},{x:75,y:77},{x:155,y:77},{x:310,y:97},{x:190,y:97},{x:33,y:97});
+// depois dos do Submundo: os do sonho e o da adega (a ordem importa, o save guarda o número de cada altar)
+STATUES.push({x:350,y:97},{x:446,y:83},{x:360,y:57},{x:440,y:27},{x:84,y:30});
 BRAZIERS.push([16,77],[48,77],[80,77],[110,77],[160,77],[200,77],[240,77],[300,77],[280,97],[188,97],[60,97],[25,97],[6,97],[150,97]);
 ENEMY_SPAWNS.push(
   {t:'shadow',x:28,y:77},{t:'zomb',x:38,y:77},{t:'garg',x:30,y:64},{t:'ghoul',x:46,y:77},{t:'spider',x:14,y:77},

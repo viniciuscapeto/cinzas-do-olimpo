@@ -19,7 +19,7 @@
  ok(SC&&SC.chap&&SC.chap.t==='O sonho da montanha','a cena abre com cartão de capítulo');close();
  put(343,97);P.riftCd=0;run(3);ok(P.x<40*16,'a fenda de volta leva ao trono');
  // altares novos na viagem
- save.lit=[1,18,19,20,21];travelMenu();ok(panel.innerHTML.includes('Margem do Sonho')&&panel.innerHTML.includes('Cume do Sonho'),'altares do sonho aparecem na viagem');state='play';scr.hidden=true;
+ save.lit=[1,...[350,446,360,440].map(x=>STATUES.findIndex(s=>s.x===x))];travelMenu();ok(panel.innerHTML.includes('Margem do Sonho')&&panel.innerHTML.includes('Cume do Sonho'),'altares do sonho aparecem na viagem');state='play';scr.hidden=true;
  // os quatro chefes: acordam, lutam sem erro, caem, abrem a saída e dão a recompensa
  const fight=(B,x,y,check)=>{fresh(f=>f);save.flags.rift=1;reset();state='play';ents.forEach(e=>e.dead=true);put(x,y);P.inv=1e9;run(8);
    const b=B();ok(b&&b.state!=='sleep','acorda: '+(b&&b.name));
@@ -29,7 +29,7 @@
  fight(()=>B18,440,97,()=>{ok(save.boss18Dead&&save.weapons.includes('shovel'),'Dimas cai e dá a Pá de Dimas');close();ok(tile(453,85)==='.'&&tile(449,95)==='=','abre a saída do cemitério')});
  fight(()=>B19,355,83,()=>{ok(save.boss19Dead&&save.charms.includes('febre'),'a Febre cai e dá o amuleto');close();ok(tile(344,59)==='.','abre a saída do quarto')});
  fight(()=>B20,440,57,()=>{ok(save.boss20Dead&&save.ab.echo,'o Eco cai e dá o Passo do Eco');close();ok(tile(453,29)==='.','abre a saída da arena do Eco')});
- fight(()=>B21,360,27,()=>{ok(save.boss21Dead&&save.flags.sonho&&state==='win','a Montanha cai e mostra o final novo');ok(panel.innerHTML.includes('Sonho da Montanha')&&panel.innerHTML.includes('de 21'),'tela de fim conta o sonho e os 21 chefes')});
+ fight(()=>B21,360,27,()=>{ok(save.boss21Dead&&save.flags.sonho&&state==='win','a Montanha cai e mostra o final novo');ok(panel.innerHTML.includes('Sonho da Montanha')&&panel.innerHTML.includes('de 23'),'tela de fim conta o sonho e os 23 chefes')});
  // caminho: as saídas levam de uma faixa para a outra
  fresh(()=>{save.boss18Dead=save.boss19Dead=save.boss20Dead=true});ok(tile(453,84)==='.'&&tile(344,58)==='.'&&tile(453,28)==='.','saídas abertas ao carregar o save');
  ok(!solid(tile(452,86))&&tile(452,86)==='=','degrau embaixo de cada buraco');

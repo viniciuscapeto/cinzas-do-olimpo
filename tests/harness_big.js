@@ -146,7 +146,7 @@
   ok(B9.hp<hh,'pulando dá para acertar o coração no alto ('+hh+'→'+B9.hp+')');
   B9.hp=1;B9.state='stun';hitBoss(5);for(let i=0;i<130&&state==='play';i++)step();
   ok(state==='scene'&&SC.title==='O amanhecer','vencer o coração mostra o final');finishScene();ok(state==='win','tela de fim');
-  ok(panel.innerHTML.includes('de 21'),'tela de fim conta os 21 chefes');
+  ok(panel.innerHTML.includes('de 23'),'tela de fim conta os 23 chefes');
 
   // ---------- salvar e continuar ----------
   fresh();save.ash=33;save.tech.charge=true;save.cp={x:181,y:13};persist();

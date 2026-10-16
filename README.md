@@ -1,6 +1,6 @@
 # Cinzas do Olimpo
 
-Metroidvania 2D em pixel art, feito para rodar direto no navegador: **45 áreas, 21 chefes, 5 armas de corpo a corpo, adagas e arco, níveis de experiência, forja, amuletos e um mistério com três finais.**
+Metroidvania 2D em pixel art, feito para rodar direto no navegador: **50 áreas, 23 chefes, 5 armas de corpo a corpo, adagas e arco, itens raros, conquistas, modo chefe, arena sem fim, níveis de experiência, forja, amuletos e um mistério com três finais.**
 
 > Há dez anos o sol não nasce na cidade de Olimpo. Toda noite o sino toca três vezes e os mortos se levantam da cinza.
 > Você é Teo, o último coveiro, e esta noite vai descobrir quem toca o sino. No bolso, um bilhete com a sua própria letra.
@@ -28,7 +28,7 @@ Metroidvania 2D em pixel art, feito para rodar direto no navegador: **45 áreas,
 | No ar: golpe de queda | ↓ + atacar | ▼ + Atacar |
 | Mapa · Tela cheia | M · F | Mapa · Tela cheia |
 
-O jogo salva sozinho nos altares.
+O jogo salva nos altares e sozinho a cada 30 segundos (e ao fechar a aba). Fechar o navegador não apaga o save. Na tela inicial dá para **exportar/importar o save** num arquivo e **carregar o save do criador** (uma cópia guardada automaticamente).
 
 Para continuar o desenvolvimento, veja **[docs/CONTEXTO.md](docs/CONTEXTO.md)**.
 
@@ -58,7 +58,7 @@ Precisa do Node 18 ou mais novo.
 powershell -File tests\run_tests.ps1 harness_sub.js
 ```
 
-As suítes são `harness_big`, `harness_v3`, `harness_gem`, `harness_ward`, `harness_clock`, `harness_sub`, `harness_hints`, `harness_weapons`, `harness_levels`, `harness_fx` e `harness_dream`.
+As suítes são `harness_big`, `harness_v3`, `harness_gem`, `harness_ward`, `harness_clock`, `harness_sub`, `harness_hints`, `harness_weapons`, `harness_levels`, `harness_fx`, `harness_dream` e `harness_extra`.
 
 ### Gerar o executável do Windows
 
