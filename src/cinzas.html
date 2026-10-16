@@ -898,6 +898,64 @@ function zoneAt(tx,ty){
   if(ty>=27&&tx>=109){if(tx>=165)return'Câmara do Sino';if(tx>=151)return'Cemitério Velho';return'Rio de Cinza'}
   if(tx>=162)return'Ateliê da Escultora';if(tx>=152)return'Chaminé do Vulcão';if(tx>=109)return'Fundição';
   if(ty>=27)return'Catacumbas';if(tx>=88)return'Praça do Corcel';if(tx>=48)return'Templo da Colheita';return'Ruínas de Olimpo'}
+/* selos de brasa: a porta do chefe fica selada até o puzzle ser resolvido.
+   'ordem' = acender braseiros/lanternas na ordem que a pedra ensina (bater ou atirar); errou, apagam todos.
+   'tempo' = acertar o relógio de bronze abre o selo por alguns segundos */
+const PUZZLES=[
+  {id:'caes',boss:'boss3Dead',type:'ordem',seal:{x:150,r0:28,r1:37},tablet:{x:145,y:37},kind:'brazier',
+   pieces:[{x:144,y:37},{x:128,y:34},{x:134,y:31},{x:139,y:34}],
+   riddle:'"Os cães só deixam passar quem enterra direito. Acenda como Dimas ensinava: primeiro a cova mais funda, depois a que está mais longe da porta, depois a mais alta. A última é a que sobra."'},
+  {id:'lucio',boss:'boss7Dead',type:'tempo',seal:{x:240,r0:16,r1:24},tablet:{x:236,y:24},clock:{x:214,y:18},time:270,
+   riddle:'"O pátio do estandarte só abre enquanto o relógio do quartel bate. Acerte o relógio e corra."'},
+  {id:'kalas',boss:'boss17Dead',type:'ordem',seal:{x:31,r0:88,r1:97},tablet:{x:60,y:97},kind:'lantern',
+   pieces:[{x:53,y:92},{x:40,y:90},{x:58,y:88},{x:47,y:86}],
+   riddle:'"As velas do culto se acendem de baixo para cima, como a cinza que sobe da lava."'}];
+const puzSolved=pz=>!!(save.puz&&save.puz[pz.id])||!!save[pz.boss];
+const puzState={};
+function applySeals(){for(const pz of PUZZLES){if(puzSolved(pz))continue;for(let r=pz.seal.r0;r<=pz.seal.r1;r++)grid[r][pz.seal.x]='S'}}
+function setSeal(pz,closed){for(let r=pz.seal.r0;r<=pz.seal.r1;r++)if(grid[r][pz.seal.x]==='S'||grid[r][pz.seal.x]==='.')grid[r][pz.seal.x]=closed?'S':'.'}
+function solvePuzzle(pz){
+  save.puz=save.puz||{};save.puz[pz.id]=1;setSeal(pz,false);persist();
+  const x=pz.seal.x*TS+8;for(let r=pz.seal.r0;r<=pz.seal.r1;r++)burst(x,r*TS+8,'#ffd070',8,2.5,true);
+  shake=10;sfx('break');sfx('altar');say('O selo de brasa se abriu');
+}
+const puzSt=pz=>puzState[pz.id]||(puzState[pz.id]={lit:[],open:0,flash:0});
+// um golpe ou tiro em (x,y) com raio r acende o que estiver ali
+function hitPuzzle(x,y,r){
+  for(const pz of PUZZLES){if(puzSolved(pz))continue;const s=puzSt(pz);
+    if(pz.type==='ordem')pz.pieces.forEach((pc,i)=>{if(s.lit.includes(i))return;const px=pc.x*TS+8,py=pc.y*TS+(pz.kind==='lantern'?4:8);if(Math.hypot(px-x,py-y)>r+7)return;
+      const want=s.lit.length;
+      if(i===want){s.lit.push(i);burst(px,py-4,'#ffb040',12,2,true);sfx('altar');if(s.lit.length===pz.pieces.length)solvePuzzle(pz)}
+      else{s.lit=[];s.flash=30;burst(px,py-4,'#8a8a96',14,2);sfx('blip');shake=4;say('A ordem está errada · as chamas se apagaram')}});
+    if(pz.type==='tempo'){const cx=pz.clock.x*TS+8,cy=pz.clock.y*TS+8;if(Math.hypot(cx-x,cy-y)<r+8&&s.open<=0){s.open=pz.time;setSeal(pz,false);sfx('slam');burst(cx,cy,'#ffd070',14,2.5,true);say('O relógio bateu · corra!')}}}
+}
+function updatePuzzles(){
+  for(const pz of PUZZLES){if(puzSolved(pz))continue;const s=puzSt(pz);if(s.flash>0)s.flash--;
+    if(pz.type==='tempo'&&s.open>0){s.open--;if(s.open%30===0)sfx('blip');
+      // passou pela porta: o selo fica aberto de vez
+      if(P.x>pz.seal.x*TS+12){solvePuzzle(pz);continue}
+      if(s.open===0){const sx=pz.seal.x*TS;if(P.x+P.w>sx&&P.x<sx+TS)s.open=10;else{setSeal(pz,true);sfx('slam');say('O selo voltou a fechar')}}}
+    // primeira vez encostando no selo: a dica
+    const sx=pz.seal.x*TS;if(!hints['seal'+pz.id]&&Math.abs(P.x+P.w/2-sx-8)<26&&P.y+P.h>pz.seal.r0*TS&&P.y<(pz.seal.r1+1)*TS){hints['seal'+pz.id]=1;say('Um selo de brasa · leia a pedra aqui perto (baixo)')}}
+}
+function nearTablet(){for(const pz of PUZZLES){if(puzSolved(pz))continue;const tx=pz.tablet.x*TS+8,ty=(pz.tablet.y+1)*TS;if(Math.abs(P.x+P.w/2-tx)<14&&Math.abs(P.y+P.h-ty)<10)return pz}return null}
+function drawPuzzles(){
+  for(const pz of PUZZLES){const s=puzSt(pz),solved=puzSolved(pz);
+    // pedra com a inscrição
+    {const x=pz.tablet.x*TS+3,y=(pz.tablet.y+1)*TS-12;if(inView(x,y,30)&&!solved){ctx.fillStyle='#4a4450';ctx.fillRect(x,y,10,12);ctx.fillStyle='#6a6470';ctx.fillRect(x,y,10,2);
+      ctx.fillStyle=(frames>>4)%2?'#ffd070':'#c89a3a';ctx.fillRect(x+3,y+4,4,1);ctx.fillRect(x+2,y+6,6,1);ctx.fillRect(x+3,y+8,4,1)}}
+    if(pz.type==='ordem')pz.pieces.forEach((pc,i)=>{const lit=solved||s.lit.includes(i),x=pc.x*TS+8;if(!inView(x,pc.y*TS,40))return;
+      if(pz.kind==='lantern'){const y=pc.y*TS+4;ctx.strokeStyle='#5a5560';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y-16);ctx.lineTo(x,y-4);ctx.stroke();
+        ctx.fillStyle='#5a5060';ctx.fillRect(x-4,y-4,8,9);ctx.fillStyle=lit?'#ffb040':s.flash?'#5a5a66':'#2a1a1a';ctx.fillRect(x-3,y-2,6,6);if(!lit){ctx.fillStyle='#c84a1a';ctx.fillRect(x-1,y+1,2,2);glow(x,y+1,7,'255,90,30',.15+.08*Math.sin(frames*.12+i))}
+        if(lit){glow(x,y+1,12,'255,150,50',.45+.1*Math.sin(frames*.2+i));flame(x,y+3,.5)}}
+      else{const y=(pc.y+1)*TS;shadow(x,y,6);ctx.fillStyle='#4a3a2a';ctx.fillRect(x-1,y-10,2,10);ctx.fillRect(x-4,y-2,8,2);ctx.fillStyle='#7a6a5a';ctx.fillRect(x-6,y-13,12,3);ctx.fillStyle='#2a2420';ctx.fillRect(x-5,y-11,10,1);
+        if(lit){flame(x,y-13,1);glow(x,y-16,12,'255,140,50',.35)}else{ctx.fillStyle=s.flash&&(frames>>2)%2?'#8a8a96':'#7a2a10';ctx.fillRect(x-3,y-13,6,1);glow(x,y-13,6,'255,90,30',.12+.06*Math.sin(frames*.1+i))}}});
+    if(pz.type==='tempo'&&!solved){const x=pz.clock.x*TS+8,y=pz.clock.y*TS+8;if(inView(x,y,40)){ctx.fillStyle='#3a2a16';ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.fill();ctx.strokeStyle='#d9a441';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.stroke();
+        const a=s.open>0?-Math.PI/2+(1-s.open/pz.time)*Math.PI*2:-Math.PI/2;ctx.strokeStyle='#fff2d0';ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*5,y+Math.sin(a)*5);ctx.stroke();
+        if(s.open<=0&&(frames>>4)%2)glow(x,y,10,'255,200,90',.25)}
+      // contagem em volta do selo aberto
+      if(s.open>0){const sx=pz.seal.x*TS+8,sy=(pz.seal.r0+pz.seal.r1+1)/2*TS;ctx.strokeStyle='#ffd070';ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx,sy,14,-Math.PI/2,-Math.PI/2+Math.PI*2*s.open/pz.time);ctx.stroke()}}}
+}
 function setDoor(closed){for(let r=11;r<=15;r++)grid[r][89]=closed?'#':'.'}
 function setDoor2(closed){for(let r=2;r<=5;r++)grid[r][161]=closed?'#':'.'}
 function openEast(){for(let r=11;r<=15;r++){grid[r][109]='.';grid[r][110]='.'}}
@@ -987,7 +1045,7 @@ function gainXp(n){
 const slotsUsed=()=>save.equip.reduce((s,id)=>s+CHARMS[id].c,0);
 function newGame(){save=freshSave();seen=new Uint8Array(W*H);hints={};frames=0;reset();updateAbil();persist()}
 function reset(){
-  buildWorld();
+  buildWorld();applySeals();for(const k in puzState)delete puzState[k];
   ents=ENEMY_SPAWNS.map(mkEnemy);
   // inimigos comuns: mais vida, e alguns furiosos (brilho vermelho, batem mais forte, dão o dobro de experiência)
   for(const e of ents){e.xp=Math.round(e.hp*1.5)+1;e.hp*=FOE_HP;if(Math.random()<ELITE_P+Math.min(.33,Math.max(0,(save.ng||0)-1)*.1)){e.elite=true;e.hp*=1.8;e.xp*=2}}
@@ -1176,7 +1234,8 @@ function updatePlayer(){
   }
   // falar fica no "baixo": o botão de atacar sempre ataca, mesmo perto de alguém
   if(pressed('down')&&!keys.jump&&p.ground&&!p.atk&&p.dashT===0){const n=nearNpc();if(n){talk(n);prev={...keys};return}
-    if(p.onStatue>=0&&!fightingNow()&&!trial){altarMenu();prev={...keys};return}}
+    if(p.onStatue>=0&&!fightingNow()&&!trial){altarMenu();prev={...keys};return}
+    {const pz=nearTablet();if(pz){showMsg({n:'Inscrição na pedra',d:pz.riddle});prev={...keys};return}}}
   // frasco de cura: fica parado bebendo; levar golpe interrompe sem gastar o frasco
   if(pressed('heal')&&p.ground&&!p.drink&&p.flasks>0&&!p.atk&&p.dashT===0&&!p.power&&P.hp<maxHp()){p.drink=hasCharm('gole')?22:36;p.chg=0;sfx('orb')}
   if(p.drink>0){
@@ -1560,6 +1619,7 @@ function doHits(bl,dmg){
     }
     if(bossHittable()&&!P.atk.hit.has('boss')&&pts.some(q=>circRect(q[0],q[1],q[2],boss))){P.atk.hit.add('boss');hitBoss(dmg);meleeCharge();weaponFx(save.weapon,boss.x+boss.w/2,boss.y+boss.h/2,P.x+P.w/2,P.y+9,true)}
     for(const c of chests)if(!c.open&&pts.some(q=>circRect(q[0],q[1],q[2],c))){openChest(c);break}
+    hitPuzzle(b.x,b.y,10);
     // a espada também rebate projéteis
     shots=shots.filter(s=>{if(pts.some(q=>circRect(q[0],q[1],q[2]+2,s))){slashFx(s.x+4,s.y+4);burst(s.x+4,s.y+4,'#ffd08a',8,2,true);sfx('clang');hitstop=Math.max(hitstop,2);return false}return true});
   }
@@ -2864,6 +2924,7 @@ function updatePShots(){
       s.x+=s.vx;s.y+=s.vy;s.vy+=s.g;s.life--;
       if(s.kind==='arrow'&&frames%2===0)fxp.push({x:s.vx>0?s.x:s.x+12,y:s.y,vx:-s.vx*.08,vy:-.2-Math.random()*.4,life:14,max:14,col:Math.random()<.5?'#ffb040':'#ff5a1a',size:1,add:true});
       if(s.kind==='arrow')for(const t of TARGETS)if(!tgOpen(t)&&overlap(s,targetBox(t))){openTarget(t);return false}
+      {const before=JSON.stringify(puzState);hitPuzzle(s.x+s.w/2,s.y+s.h/2,4);if(JSON.stringify(puzState)!==before&&!s.pierce)return false}
       if(solid(tile(Math.floor((s.x+s.w/2)/TS),Math.floor((s.y+s.h/2)/TS)))||s.life<=0){burst(s.x+6,s.y+1,s.fire?'#ff8a3a':'#c8c0b0',5,1.2,s.fire);sfx('land');return false}
       if(s.fire&&frames%2)fxp.push({x:s.x+6-s.vx,y:s.y+1,vx:0,vy:-.5,life:12,max:12,col:'#ff8a3a',size:2,add:true});
       for(const e of ents)if(!e.dead&&!e.hidden&&!s.hit.has(e)&&overlap(s,e)){s.hit.add(e);hitEnemy(e,s.dmg,Math.sign(s.vx)*1.5,-1);if(!s.pierce)return false}
@@ -2937,7 +2998,7 @@ function updateParticles(){
     }
     else fxp.push({x:cam.x+Math.random()*VW,y:cam.y+VH+2,vx:(Math.random()-.5)*.3,vy:-.35-Math.random()*.4,life:260,max:260,col:'#ff7a3a',size:1,add:true});
   }
-  if(state==='play'){crackFx();crawlHints()}
+  if(state==='play'){crackFx();crawlHints();updatePuzzles()}
   if(zone==='Fundição'&&frames%5===0){
     const x0=Math.floor(cam.x/TS),y0=Math.floor(cam.y/TS),tx=x0+Math.floor(Math.random()*21),ty=y0+Math.floor(Math.random()*12);
     if(tile(tx,ty)==='L')fxp.push({x:tx*TS+Math.random()*16,y:ty*TS+3,vx:(Math.random()-.5)*.4,vy:-1-Math.random(),g:.03,life:40,max:40,col:'#ffb040',size:2,add:true});
@@ -4475,6 +4536,9 @@ function drawLighting(cx,cy){
     for(const [tx,ty] of CRYSTALS)if(inView(tx*TS,ty*TS,40))hole(tx*TS+8-cx,ty*TS+8-cy,34);
     visibleLava(cx,cy,(x,y)=>hole(x-cx,y-cy,58*fl));
     for(const it of items)if(it.id!=='orb'&&it.id!=='ash')hole(it.x+5-cx,it.y+6-cy,46);
+    // puzzles: peça acesa ilumina forte, apagada só um pouco (para dar para achar); a pedra e o relógio também
+    for(const pz of PUZZLES){if(puzSolved(pz))continue;const s=puzSt(pz);if(pz.pieces)pz.pieces.forEach((pc,i)=>{const x=pc.x*TS+8,y=pc.y*TS+(pz.kind==='lantern'?4:0);if(inView(x,y,80))hole(x-cx,y-cy,s.lit.includes(i)?70*fl:30)});
+      if(pz.clock){const x=pz.clock.x*TS+8,y=pz.clock.y*TS+8;if(inView(x,y,80))hole(x-cx,y-cy,s.open>0?60*fl:36)}const tx=pz.tablet.x*TS+8,ty=pz.tablet.y*TS+8;if(inView(tx,ty,60))hole(tx-cx,ty-cy,28)}
     for(const w of waves)hole(w.x+6-cx,w.y+6-cy,40);
     for(const s of pshots)hole(s.x+7-cx,s.y+8-cy,50);
     for(const s of shots)if(s.kind==='soul')hole(s.x+4-cx,s.y+4-cy,24);
@@ -4661,7 +4725,7 @@ function storyTick(){
    A seta aponta para onde esse caminho sai da tela atual; só quando o objetivo está na tela ela aponta para ele */
 const guidePath={key:'',pts:null,t:0};
 function findPath(sx,sy,tx,ty){
-  const free=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&!solid(grid[y][x]);
+  const free=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&(!solid(grid[y][x])||grid[y][x]==='S');
   // o alvo pode estar dentro de algo sólido (chefe, item): vale a casa livre mais perto
   if(!free(tx,ty)){let best=null,bd=1e9;for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++)if(free(tx+dx,ty+dy)&&dx*dx+dy*dy<bd){bd=dx*dx+dy*dy;best=[tx+dx,ty+dy]}if(!best)return null;[tx,ty]=best}
   if(!free(sx,sy))return null;
@@ -4840,7 +4904,7 @@ function render(){
   const cx=snap(cam.x+sx),cy=snap(cam.y+sy);
   drawBg(cx,cy);
   ctx.save();ctx.translate(-cx,-cy);
-  drawWorldBg(cx);drawOptBg();drawDreamBg();drawCrystals();drawTiles(cx,cy);drawStains();drawBraziers();drawStatues();drawRifts();drawChests();drawTraps();drawTargets();drawSunkColumns();drawWatchers();drawThrone();outlined(drawNpcs);drawItems();outlined(drawEnemies);drawEnrage();outlined(drawBosses);drawBossWarn();drawWaves();drawZones();drawShots();
+  drawWorldBg(cx);drawOptBg();drawDreamBg();drawCrystals();drawTiles(cx,cy);drawStains();drawBraziers();drawStatues();drawRifts();drawChests();drawTraps();drawTargets();drawPuzzles();drawSunkColumns();drawWatchers();drawThrone();outlined(drawNpcs);drawItems();outlined(drawEnemies);drawEnrage();outlined(drawBosses);drawBossWarn();drawWaves();drawZones();drawShots();
   drawGhosts();drawParticles(false);if(state!=='dead')drawTrails();outlined(drawHero);drawBow();drawWard();
   ctx.restore();
   drawLighting(cx,cy);
@@ -5153,7 +5217,8 @@ function victory(){
   screen(`<span class="eyebrow">Fim</span><h2>Cinzas do Olimpo</h2>
   ${save.boss17Dead?'':'<p><b>Pista:</b> o culto ainda vive lá embaixo. Procure chãos rachados soltando fumaça: no pântano, no rio de cinza e no fundo da mina.</p>'}<p>${endingTag()} ${save.flags.sonho?'Você terminou o Sonho da Montanha. ':''}Chefes vencidos: ${nb} de 23 · ecos: ${ecoCount()} de ${ECOS.length} · técnicas: ${tec} de 4 · relíquias: ${rel} de 10 · baús: ${save.chests.length} de ${CHESTS.length} · amuletos: ${save.charms.length} de ${Object.keys(CHARMS).length} · vida máxima ${save.maxHp}${save.flags.bell?' · Lino voltou para casa':''}. Tempo: ${m}:${String(s).padStart(2,'0')}.</p>
   <p>Obrigado por jogar.</p>
-  <div class="row"><button class="btn" data-go="ngplus">Nova Noite+</button><button class="ghostbtn" data-go="start">Começar do zero</button></div>`);
+  ${save.flags.sonho?'':save.boss17Dead?'<p><b>A montanha ainda sonha.</b> Atrás do trono de Kalas, a rocha se abriu. Continue a noite para entrar no sonho.</p>':'<p>Ainda há algo embaixo da cidade. Continue a noite para descobrir.</p>'}
+  <div class="row">${save.flags.sonho?'':'<button class="btn" data-go="cont">Continuar a noite</button>'}<button class="${save.flags.sonho?'btn':'ghostbtn'}" data-go="ngplus">Nova Noite+</button><button class="ghostbtn" data-go="start">Começar do zero</button></div>`);
 }
 function updateAbil(){
   const a=['<b>'+curW().n+'</b>'+(save.weapons.length>1?' (T troca)':''),'<b>Golpe de queda</b>','<b>Erupção</b>'];if(save.ab.jump)a.push('<b>Pulo duplo</b>');if(save.ab.dash)a.push('<b>Investida</b>');if(save.ab.wall)a.push('<b>Salto na parede</b>');if(save.ab.beast)a.push('<b>Erupção maior</b>');if(save.ab.knives)a.push('<b>Adagas</b>');if(save.ab.bow)a.push('<b>Arco</b>');if(save.ab.fire)a.push('<b>Flechas de fogo</b>');if(save.ab.glide)a.push('<b>Planar</b>');if(save.ab.echo)a.push('<b>Passo do Eco</b>');
@@ -5447,10 +5512,12 @@ ENEMY_SPAWNS.push(
   {t:'cult',x:368,y:57},{t:'hop',x:375,y:57},{t:'guard',x:380,y:57},{t:'garg',x:384,y:40},{t:'brute',x:400,y:57},{t:'shadow',x:406,y:57},{t:'harp',x:395,y:42},{t:'zomb',x:415,y:57},{t:'ghoul',x:418,y:57},
   {t:'guard',x:445,y:27},{t:'garg',x:435,y:10},{t:'harp',x:425,y:12},{t:'cult',x:401,y:24},{t:'brute',x:388,y:27},{t:'shadow',x:380,y:27},{t:'ghoul',x:395,y:27});
 // fendas: uma no trono do Kalas (aparece quando ele cai) e a volta, na Margem do Sonho
-const RIFTS=[{x:6,y:97,to:{x:347,y:97},on:()=>save.boss17Dead,dream:true},{x:343,y:97,to:{x:10,y:97},on:()=>true}];
+const RIFTS=[{x:6,y:97,to:{x:347,y:97},on:()=>save.boss17Dead&&save.boss9Dead,dream:true},{x:343,y:97,to:{x:10,y:97},on:()=>true}];
 const riftBox=r=>({x:r.x*TS-2,y:(r.y-1)*TS,w:20,h:32});
 function updateRifts(){
   if(P.riftCd>0){P.riftCd--;return}
+  // Kalas caiu mas o Coração ainda bate: a rocha atrás do trono pulsa, fechada
+  if(save.boss17Dead&&!save.boss9Dead&&!hints.riftShut&&Math.abs(P.x-6*TS)<70&&Math.abs(P.y-96*TS)<60){hints.riftShut=1;thought={txt:'A rocha atrás do trono pulsa, mas não abre. Primeiro o sino. Depois o coração.',t:320,wait:0}}
   for(const r of RIFTS){if(!r.on()||!inView(r.x*TS,r.y*TS,60))continue;
     if(frames%3===0){const a=Math.random()*Math.PI*2;fxp.push({x:r.x*TS+8+Math.cos(a)*16,y:r.y*TS+Math.sin(a)*20,vx:-Math.cos(a)*.8,vy:-Math.sin(a)*.8,life:20,max:20,col:Math.random()<.5?'#b8a8ff':'#7a5ad0',size:1,add:true})}
     if(overlap(P,riftBox(r))){P.x=r.to.x*TS+3;P.y=(r.to.y+1)*TS-22;P.vx=P.vy=0;P.riftCd=60;P.onStatue=-1;cam.x=P.x-VW/2;cam.y=P.y-VH/2;clampCam();shake=8;sfx('altar');
