@@ -7,13 +7,13 @@ Para retomar com um assistente de IA, cole a seção **"Prompt para retomar"** (
 
 ## 1. O jogo hoje
 
-Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução lógica 320×180, blocos de 16 px e mundo de **340 × 100 blocos**.
+Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução lógica 320×180, blocos de 16 px e mundo de **460 × 100 blocos** (as colunas 339 a 459 são o Ato II).
 
 | Item | Quantidade |
 |---|---|
-| Áreas com nome | 36 |
-| Chefes | 17 (8 obrigatórios + 9 opcionais) |
-| Armas corpo a corpo | 4: Espada, Lança, Foice, Martelo |
+| Áreas com nome | 45 |
+| Chefes | 21 (8 obrigatórios + 9 opcionais + 4 do Ato II) |
+| Armas corpo a corpo | 5: Espada, Lança, Foice, Martelo, Pá de Dimas |
 | Armas de tiro | Adagas do Coveiro (Ruínas, plataforma em x15 y18; 5 adagas que voltam sozinhas) e Arco (flecha normal e carregada; flechas de fogo depois). Com o arco, as adagas saem quando as flechas acabam |
 | Níveis | 1 a 30. Inimigos e chefes dão experiência (`gainXp`, `xpNeed`, `BOSS_XP`); cada nível dá +4% de dano e a cada 4 níveis +1 de vida máxima |
 | Dificuldade dos inimigos comuns | +35% de vida (`FOE_HP`), recuperação mais curta entre golpes, menos orbes de cura e 12% de chance de nascer **furioso** (`ELITE_P`: aura vermelha, +80% de vida, tira 2 de vida, dobro de experiência). Chefes não mudaram |
@@ -55,6 +55,21 @@ Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução l�
 | Submundo, todo abaixo de y=55 | Brasa Viva, Grom, Estátua Ardente, Gárgula Rainha, Redemoinho, Kalas |
 
 **Mortes e golpes:** cada inimigo se desfaz no material dele (`GORE`: sangue, gosma, osso, pedra, névoa ou brasa). As gotas caem e viram manchas no chão (`bleed`, `goreDeath`, `stains`). Cada golpe mostra o dano (x10) e soma no contador "N HITS" (`combo`, `countHit`, `drawCombo`), que zera depois de ~2,5 s sem acertar ou ao apanhar.
+
+### Ato II · O Sonho da Montanha
+
+Depois que Kalas cai, abre-se uma fenda no trono dele (`RIFTS`). Ela leva ao sonho da montanha, onde está guardado tudo o que ela comeu, inclusive o que Teo esquece toda manhã. A região tem quatro faixas, de baixo para cima, cada uma com uma arena e uma saída no teto que só abre depois do chefe (`DEXIT`, `setDreamExit`):
+
+| Faixa | Áreas | Chefe | Recompensa |
+|---|---|---|---|
+| A (y86-97) | Margem do Sonho, Casa de Eurídice, Cemitério de Dimas | Dimas, o primeiro coveiro | Pá de Dimas (3º golpe joga torrões) |
+| B (y60-83) | Estrada da Caravana, Quarto da Febre | A Febre | amuleto Febre Contida (com 1 de vida, dano dobrado) |
+| C (y30-57) | Praça da Festa Sonhada, Espelho do Eco | O Eco de Teo (luta como o jogador) | Passo do Eco (a investida deixa uma explosão) e +1 de vida |
+| D (y3-27) | Cume do Sonho, Olho da Montanha | A Montanha que Sonha | final novo, "O nome" |
+
+**Quem era Teo:** filho de Eurídice, cantora do templo, e do capitão Andros. A mãe morreu de febre quando ele tinha nove anos, enquanto o pai escoltava uma caravana mandada por um sacerdote de manto vermelho (Kalas). Ninguém abriu a porta; só o velho coveiro Dimas apareceu e ensinou que quem enterra diz o nome em voz alta. Teo recusou a espada da guarda, e pai e filho passaram anos quase sem conversar. Isso é contado nas 6 **Lembranças de Teo** (`LEMS`, `readLem`; as 6 dão +1 de vida), nas memórias dos chefes (`DREAM_MEMS`), no Teo criança e em Eurídice (NPCs fantasmas) e no final (`DREAM_END`).
+
+Os inimigos do sonho são os comuns em tom violeta, com mais vida e experiência (`e.dream`). Saves antigos são convertidos: o mapa explorado é copiado para a largura nova (`W_OLD`), e quem já venceu o Submundo não recebe mais boatos.
 
 **Mortes por tipo** (`DEATH`, `mkCorpse`): gárgula vira pedra e se desfaz (no ar, cai e se espatifa); soldado, cultista, bruto e cão explodem em sangue (`explodeGore`); mago, caveira e carniçal explodem em fogo e deixam marca queimada (`explodeFire`); zumbi desmonta em três pedaços e esqueleto desaba em ossos (`pieces`, desenhados com recorte de `drawEnemy`); fantasmas sobem e somem; criatura do pântano e aranha estouram em gosma. O sangue mancha chão e paredes, e quando Teo apanha a tela leva respingos que escorrem (`splats`).
 
@@ -140,6 +155,7 @@ Os testes rodam o jogo inteiro no Node, sem navegador (o canvas é falso), e sim
 | `harness_sub` | Submundo inteiro: caminhos, arco, olhos de bronze, planar, 6 chefes, NPCs, finais |
 | `harness_hints` | pistas para achar o Submundo |
 | `harness_weapons` | armas novas e aviso dos chefes |
+| `harness_dream` | Ato II: região lacrada, inimigos, fendas, os 4 chefes, saídas, lembranças, objetivo, save antigo, pá e Passo do Eco |
 | `harness_fx` | animação de morte, sangue na parede e na tela, poeira, objetivo, pensamentos, capítulos e cenas |
 | `harness_levels` | adagas, níveis, inimigos mais fortes e furiosos, boatos do Submundo, sangue, combo e mapa da viagem |
 
@@ -185,6 +201,7 @@ O PNG aparece alguns segundos depois de o processo inicial sair. Injete um `<scr
 - [ ] Tileset desenhado no lugar dos blocos procedurais.
 
 ### Jogo
+- [ ] Próximas etapas pedidas: áreas opcionais novas no mapa atual; modo chefe, arena, conquistas e itens raros; mais voltas de Noite+.
 - [ ] Mais armas de tiro: besta, bombas de cinza, lança de arremesso (as adagas já existem).
 - [ ] Ajustar a curva de níveis (`xpNeed`) e a vida dos inimigos (`FOE_HP`) depois de jogar.
 - [ ] Inventário ou diário com os Ecos lidos e as anotações do mapa.

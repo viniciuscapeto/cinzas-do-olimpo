@@ -124,7 +124,7 @@ kbd{font-family:var(--f-pix);font-size:.66rem;border:1px solid var(--edge);paddi
 </style>
 
 <div class="wrap">
-  <header><h1>Cinzas do Olimpo</h1><span class="sub">Metroidvania 2D · 36 áreas, 17 chefes, espada, adagas e arco, níveis, forja, amuletos e um mistério</span></header>
+  <header><h1>Cinzas do Olimpo</h1><span class="sub">Metroidvania 2D · 45 áreas, 21 chefes, 5 armas, adagas e arco, níveis, forja, amuletos e um mistério</span></header>
   <p class="turn">Toque em <b>Tela cheia</b> e vire o celular na horizontal.</p>
   <div class="play" id="play">
     <div class="stage" id="stage">
@@ -159,7 +159,7 @@ kbd{font-family:var(--f-pix);font-size:.66rem;border:1px solid var(--edge);paddi
 <script>
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 ctx.imageSmoothingEnabled=false;
-const TS=16,VW=320,VH=180,W=340,H=100;
+const TS=16,VW=320,VH=180,W=460,H=100,W_OLD=340;
 const G=0.45,MAXF=7.5,RUN=2.1,JUMP=-7.4,JUMP2=-7.8,DASHV=6,DASHT=12;
 const FONT='8px Silkscreen, monospace';
 // Sprites de Ansimuz (Gothicvania Cemetery, Town, Church, Swamp e coleÃ§Ã£o extra; domÃ­nio pÃºblico, CC0), reduzidos.
@@ -339,6 +339,8 @@ const BRAZIERS=[[10,21],[27,21],[40,21],[8,38],[30,38],[47,38],[60,38],[53,15],[
 const CRYSTALS=[[5,28],[12,30],[34,28],[45,29],[58,30],[61,34],[15,36],[3,35],[200,44],[230,43],[244,46],[252,44],[207,42],
   [284,31],[300,30],[318,33],[336,30],[305,45],[328,44],[270,46],[280,44]];
 const ZONES={
+  'Margem do Sonho':{dark:.15,f:5000},'Casa de Eurídice':{dark:.2,f:4200},'Cemitério de Dimas':{dark:.3,f:3800},'Estrada da Caravana':{dark:.25,f:5000},
+  'Quarto da Febre':{dark:.35,f:2600},'Praça da Festa Sonhada':{dark:.15,f:6000},'Espelho do Eco':{dark:.3,f:5000},'Cume do Sonho':{dark:.1,f:7000},'Olho da Montanha':{dark:.2,f:7000},
   'Ruínas de Olimpo':{dark:0,f:7000},'Catacumbas':{dark:.86,f:900},'Templo da Colheita':{dark:.18,f:7000},
   'Praça do Corcel':{dark:.5,f:7000},'Fundição':{dark:.62,f:2200},'Chaminé do Vulcão':{dark:.25,f:5000},'Ateliê da Escultora':{dark:.08,f:7000},
   'Pântano Afundado':{dark:.74,f:1500},'Covil da Besta':{dark:.5,f:7000},
@@ -604,6 +606,8 @@ const WEAPONS={
     atk:{...ATK,1:{dur:20,a0:3,a1:14,from:-2.6,to:1.2,dist:40,dmg:1},2:{dur:20,a0:3,a1:14,from:1.2,to:-2.6,dist:40,dmg:1},3:{dur:28,a0:4,a1:22,from:-1.6,to:-1.6+Math.PI*2,dist:46,dmg:1.5,spin:true}}},
   hammer:{n:'Martelo do Bronte',d:'Lento e pesado: dano dobrado, quebra escudos, e o terceiro golpe racha o chão soltando ondas dos dois lados.',fury:1,heavy:true,trail:[255,205,100],
     atk:{...ATK,1:{dur:26,a0:9,a1:15,from:-2.3,to:.8,dist:30,dmg:2},2:{dur:26,a0:9,a1:15,from:-2.1,to:1,dist:30,dmg:2},3:{dur:36,a0:13,a1:20,from:-2.7,to:1.3,dist:34,dmg:4,quake:true}}},
+  shovel:{n:'Pá de Dimas',d:'A pá do velho coveiro: golpes largos e pesados. O terceiro golpe joga torrões de terra para a frente.',fury:1.2,trail:[190,160,120],
+    atk:{...ATK,1:{dur:20,a0:4,a1:12,from:-2.4,to:.9,dist:38,dmg:1.3},2:{dur:20,a0:4,a1:12,from:.9,to:-2.4,dist:38,dmg:1.3},3:{dur:28,a0:8,a1:16,from:-2.6,to:1.2,dist:40,dmg:2,clods:true}}},
 };
 const curW=()=>WEAPONS[save&&save.weapon]||WEAPONS.sword;
 const curATK=()=>curW().atk;
@@ -615,7 +619,7 @@ const FOE_HP=1.35,ELITE_P=.12; // vida extra dos inimigos comuns e chance de nas
 const KNIFE_MAX=5,KNIFE_REGEN=110; // adagas: quantas cabem e quadros para voltar uma
 const CHG=36; // quadros segurando atacar até o golpe carregado ficar pronto
 
-let grid,seen=new Uint8Array(W*H),ents,items,statues,fxp,waves,shots,pshots=[],zones,chests=[],trial=null,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,boss,P,save,cam={x:0,y:0},talkQ=null,SC=null;
+let grid,seen=new Uint8Array(W*H),ents,items,statues,fxp,waves,shots,pshots=[],zones,chests=[],trial=null,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,B18,B19,B20,B21,boss,P,save,cam={x:0,y:0},talkQ=null,SC=null;
 let state='title',hitstop=0,shake=0,frames=0,banner={t:0,txt:''},zone='',showMap=false,deadT=0,hints={},dark=0,hurtFlash=0,stoneFlash=0;
 
 /* ---------- mundo ---------- */
@@ -727,6 +731,7 @@ function buildWorld(){
   f(150,92,4,1,'=');f(166,90,4,1,'=');f(140,88,6,6,'#');f(176,94,3,4,'#');f(80,92,4,1,'=');
   f(36,98,23,1,'L');f(60,86,6,1,'=');f(64,94,3,1,'=');f(61,90,3,1,'=');  // lago de fogo: só planando
   f(31,80,1,8,'#');                                                    // trono do sumo-sacerdote (x1-30)
+  buildDream(f);
   // nichos com portão de bronze
   f(64,35,3,4,'.');f(78,12,3,4,'.');
   for(const t of TARGETS){const [x,y,w,h]=t.gate;f(x,y,w,h,tgOpen(t)?'.':'G')}
@@ -739,6 +744,7 @@ const hazard=c=>c==='^'||c==='L'||c==='W';
 const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 function circRect(cx,cy,r,e){const nx=Math.max(e.x,Math.min(cx,e.x+e.w)),ny=Math.max(e.y,Math.min(cy,e.y+e.h));return (cx-nx)**2+(cy-ny)**2<=r*r}
 function zoneAt(tx,ty){
+  if(tx>=339)return dreamZone(tx,ty);
   if(ty>=40&&ty<55&&tx<72)return tx>=48?'Covil da Besta':'Pântano Afundado';
   if(ty>=55){
     if(ty>=79){if(tx<=31)return'Trono do Sumo-Sacerdote';if(tx>=99&&tx<=131)return'Olho do Redemoinho';if(tx<=231)return'Santuário Profundo';return tx<=256?'Trono da Rainha':'Ninho das Gárgulas'}
@@ -815,10 +821,10 @@ function breakWall(tx,ty){
 function freshSave(){return{ab:{jump:false,dash:false,wall:false},maxHp:5,cp:{x:4,y:21},taken:[],broken:[],bossDead:false,boss2Dead:false,boss3Dead:false,boss4Dead:false,boss5Dead:false,
   boss6Dead:false,boss7Dead:false,boss8Dead:false,boss9Dead:false,boss10Dead:false,boss11Dead:false,talked:{},ash:0,tech:{},flags:{},
   weapons:['sword'],weapon:'sword',bronze:0,swordLv:0,flaskMax:2,flaskLv:0,slots:3,charms:[],equip:[],chests:[],lit:[],ng:0,trials:{},
-  boss12Dead:false,boss13Dead:false,boss14Dead:false,boss15Dead:false,boss16Dead:false,boss17Dead:false,arrowsMax:0,quiverLv:0,tipsLv:0,lv:1,xp:0}}
+  boss12Dead:false,boss13Dead:false,boss14Dead:false,boss15Dead:false,boss16Dead:false,boss17Dead:false,boss18Dead:false,boss19Dead:false,boss20Dead:false,boss21Dead:false,arrowsMax:0,quiverLv:0,tipsLv:0,lv:1,xp:0}}
 const hasCharm=id=>save.equip.includes(id);
 const maxHp=()=>save.maxHp+lvHp()+(hasCharm('ferro')?1:0);
-const dmgMult=()=>(1+.25*save.swordLv)*(hasCharm('sangue')?1.5:1)*(1+LV_DMG*((save.lv||1)-1));
+const dmgMult=()=>(1+.25*save.swordLv)*(hasCharm('sangue')?1.5:1)*(1+LV_DMG*((save.lv||1)-1))*(hasCharm('febre')&&P&&P.hp<=1?2:1);
 /* níveis: inimigos e chefes dão experiência; cada nível dá +4% de dano e a cada 4 níveis +1 de vida máxima */
 const LV_MAX=30,LV_DMG=.04;
 const xpNeed=l=>10+l*10;
@@ -842,15 +848,18 @@ function reset(){
   ents=ENEMY_SPAWNS.map(mkEnemy);
   // inimigos comuns: mais vida, e alguns furiosos (brilho vermelho, batem mais forte, dão o dobro de experiência)
   for(const e of ents){e.xp=Math.round(e.hp*1.5)+1;e.hp*=FOE_HP;if(Math.random()<ELITE_P){e.elite=true;e.hp*=1.8;e.xp*=2}}
+  // no sonho os mortos são lembranças: mais fortes, tom violeta, mais experiência
+  ents.forEach((e,i)=>{if(ENEMY_SPAWNS[i]&&ENEMY_SPAWNS[i].x>=339){e.dream=true;e.hp*=1.4;e.xp=Math.round(e.xp*1.6)}});
   items=ITEM_SPAWNS.filter(i=>!save.taken.includes(i.id)).map(i=>({id:i.id,x:i.x*TS+3,y:i.y*TS+2,w:10,h:12}));
   statues=STATUES.map(s=>({x:s.x*TS+2,y:s.y*TS-8,w:12,h:24,tx:s.x,ty:s.y}));
   B1=save.bossDead?null:mkMino();B2=save.boss2Dead?null:mkMedusa();B3=save.boss3Dead?null:mkCerb();B4=save.boss4Dead?null:mkAres();B5=save.boss5Dead?null:mkBeast();boss=B1;
   B6=save.boss6Dead?null:mkClock();B7=save.boss7Dead?null:mkBanner();B8=save.boss8Dead?null:mkWeaver();B9=save.boss9Dead?null:mkHeart();
   B10=save.boss10Dead?null:mkWidow();B11=save.boss11Dead?null:mkColossus();
   B12=save.boss12Dead?null:mkSpirit();B13=save.boss13Dead?null:mkJailer();B14=save.boss14Dead?null:mkStatue();B15=save.boss15Dead?null:mkQueen();B16=save.boss16Dead?null:mkTornado();B17=save.boss17Dead?null:mkPriest();
+  B18=save.boss18Dead?null:mkDigger();B19=save.boss19Dead?null:mkFever();B20=save.boss20Dead?null:mkEcho();B21=save.boss21Dead?null:mkDreamer();
   // Nova Noite+: tudo fica mais resistente
   const ng=save.ng||0;
-  if(ng){ents.forEach(e=>e.hp*=1+.6*ng);for(const b of [B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17])if(b){b.max=Math.round(b.max*(1+.5*ng));b.hp=b.max}}
+  if(ng){ents.forEach(e=>e.hp*=1+.6*ng);for(const b of [B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,B18,B19,B20,B21])if(b){b.max=Math.round(b.max*(1+.5*ng));b.hp=b.max}}
   chests=CHESTS.map(c=>({id:c.id,r:c.r,x:c.x*TS-1,y:(c.y+1)*TS-14,w:18,h:14,open:save.chests.includes(c.id)}));
   trial=null;
   waves=[];shots=[];zones=[];fxp=[];pshots=[];stains=[];corpses=[];splats=[];hitstop=0;combo.n=0;combo.t=0;
@@ -956,16 +965,16 @@ function step(){
   if(hitstop>0){hitstop--;return}
   frames++;
   const ptx=P.x/TS,pty=P.y/TS;
-  boss=pty>=55?(pty>=79.5?(ptx<31.5?B17:(ptx>=99&&ptx<=131.5)?B16:(ptx>=231&&ptx<257)?B15:null):(ptx>=51&&ptx<71)?B12:(ptx>=130&&ptx<151)?B13:(ptx>=205&&ptx<231)?B14:null):(pty>=39.5&&ptx<72)?B5:(pty>=39.5&&ptx>=149&&ptx<179)?B9:ptx>=262?(pty<8.5?B10:pty>=41.5&&ptx<290?B11:null):ptx>=179?(pty>=39.5?B8:pty<9.5?B6:B7):(pty>=26&&ptx>=109)?(ptx>=164.5?B4:B3):(ptx>150?B2:B1);
+  boss=ptx>=339?(pty>=85?B18:pty>=59?B19:pty>=29?B20:B21):pty>=55?(pty>=79.5?(ptx<31.5?B17:(ptx>=99&&ptx<=131.5)?B16:(ptx>=231&&ptx<257)?B15:null):(ptx>=51&&ptx<71)?B12:(ptx>=130&&ptx<151)?B13:(ptx>=205&&ptx<231)?B14:null):(pty>=39.5&&ptx<72)?B5:(pty>=39.5&&ptx>=149&&ptx<179)?B9:ptx>=262?(pty<8.5?B10:pty>=41.5&&ptx<290?B11:null):ptx>=179?(pty>=39.5?B8:pty<9.5?B6:B7):(pty>=26&&ptx>=109)?(ptx>=164.5?B4:B3):(ptx>150?B2:B1);
   updatePlayer();if(state!=='play')return;
-  updateEnemies();updateCorpses();updateTraps();updateWatchers();updateBoss();updateTrial();updateWaves();updateShots();updatePShots();updateZones();updateItems();updateStatues();updateNpcs();updateParticles();
+  updateEnemies();updateCorpses();updateTraps();updateWatchers();updateBoss();updateTrial();updateWaves();updateShots();updatePShots();updateZones();updateItems();updateStatues();updateRifts();updateNpcs();updateParticles();
   updateCamera();markSeen();
   const z=zoneAt(Math.floor((P.x+5)/TS),Math.floor((P.y+11)/TS));
   if(z!==zone){zone=z;say(z);thinkAbout(z)}
   dark+=(((ZONES[zone]||{}).dark||0)*(hasCharm('lanterna')?.55:1)-dark)*0.05;
   hintsCheck();storyTick();
   const fighting=boss&&boss.state!=='sleep'&&boss.state!=='dead';
-  setTrack(fighting?({mino:'boss',medusa:'boss2',cerb:'boss3',ares:'boss4',beast:'boss5',clock:'boss6',banner:'boss7',weaver:'boss8',heart:'boss9',widow:'boss10',colossus:'boss11',spirit:'boss12',jailer:'boss13',statue:'boss14',queen:'boss15',tornado:'boss16',priest:'boss17'}[boss.kind]):trial?'boss7':'explore');
+  setTrack(fighting?({mino:'boss',medusa:'boss2',cerb:'boss3',ares:'boss4',beast:'boss5',clock:'boss6',banner:'boss7',weaver:'boss8',heart:'boss9',widow:'boss10',colossus:'boss11',spirit:'boss12',jailer:'boss13',statue:'boss14',queen:'boss15',tornado:'boss16',priest:'boss17',digger:'boss18',fever:'boss19',echo:'boss20',dreamer:'boss21'}[boss.kind]):trial?'boss7':'explore');
   setFilter((ZONES[zone]||{}).f||7000);
   prev={...keys};for(const k in tapped)tapped[k]=false;
 }
@@ -1057,7 +1066,7 @@ function updatePlayer(){
       if(bossHittable()&&!p.dcut.has('boss')&&overlap(hb,boss)){p.dcut.add('boss');hitBoss(2)}
       fxp.push({x:p.x+5+p.face*10,y:p.y+6+Math.random()*12,vx:-p.face*2,vy:(Math.random()-.5),life:10,max:10,col:Math.random()<.5?'#fff2d0':'#ffb040',size:2,add:true});
     }
-    if(!p.dfx){p.dfx=1;const gx=p.x+p.w/2-p.face*6;fxp.push({wave:true,x:gx,y:p.y+p.h/2,R:20,life:16,max:16,col:'#fff2d0',vx:0,vy:0});
+    if(!p.dfx){p.dfx=1;if(save.ab.echo){pshots.push({x:p.x-7,y:p.y+p.h-18,w:24,h:18,vx:0,life:22,hit:new Set()});fxp.push({wave:true,x:p.x+5,y:p.y+11,R:22,life:18,max:18,col:'#b8a8ff',vx:0,vy:0})}const gx=p.x+p.w/2-p.face*6;fxp.push({wave:true,x:gx,y:p.y+p.h/2,R:20,life:16,max:16,col:'#fff2d0',vx:0,vy:0});
       if(p.ground)for(let i=0;i<10;i++)fxp.push({x:gx,y:p.y+p.h-2,vx:-p.face*(1+Math.random()*2.5),vy:-Math.random()*1.2,g:.05,life:24,max:24,col:Math.random()<.5?'#5a4a42':'#8a7a6a',size:2})}
     if(frames%2===0)fxp.push({streak:true,x:p.x+p.w/2-p.face*(18+Math.random()*12),y:p.y+3+Math.random()*(p.h-6),len:8+Math.random()*12,vx:-p.face*2,vy:0,life:9,max:9,col:'#fff2d0'});
     p.dashT--;p.vy=0;moveX(p,p.face*DASHV);
@@ -1114,6 +1123,7 @@ function updatePlayer(){
     p.atk.t++;
     if(p.atk.t===1)sfx('swing',p.atk.n);
     if(p.atk.n===3&&p.atk.t===3&&p.ground)p.vx=p.face*2.2;
+    if(A.clods&&p.atk.t===A.a0){for(let i=0;i<3;i++)pshots.push({kind:'clod',x:p.x+p.w/2+p.face*8-3,y:p.y+6,w:6,h:6,vx:p.face*(3+i*.9),vy:-2.4-i*.6,g:.2,life:70,hit:new Set(),dmg:1});sfx('break')}
     if(A.quake&&p.atk.t===A.a0&&p.ground){for(const s of [-1,1])pshots.push({x:p.x+p.w/2+s*10-7,y:p.y+p.h-16,w:14,h:16,vx:s*3.4,life:32,hit:new Set()});shake=Math.max(shake,8);sfx('slam')}
     if(p.atk.n===4&&p.atk.t===A.a0){p.vx=p.face*3.4;shake=Math.max(shake,5);sfx('swing',3)}
     const bl=blades();
@@ -1207,7 +1217,7 @@ function bossHittable(){return boss&&boss.state!=='sleep'&&boss.state!=='dead'}
 function slashFx(x,y){const a=Math.random()*Math.PI;fxp.push({x,y,ang:a,life:9,max:9,slash:true,add:true});fxp.push({x,y,ang:a+1.6,life:7,max:7,slash:true,small:true,add:true})}
 /* mortes à Castlevania: cada inimigo se desfaz no material dele; o sangue cai, bate no chão e mancha */
 const GORE={hop:'bone',harp:'ember',ghoul:'ember',garg:'stone',shade:'ghost',shadow:'ghost',spider:'ichor',thing:'ichor',
-  clock:'stone',statue:'stone',colossus:'stone',tornado:'ghost',spirit:'ember'};
+  clock:'stone',statue:'stone',colossus:'stone',tornado:'ghost',spirit:'ember',digger:'blood',fever:'ghost',echo:'ghost',dreamer:'ghost'};
 const GORE_COL={blood:['#b01010','#d81c1c','#ff3a2a','#7a0808'],ichor:['#3a7a1a','#5aa02a','#2a5a12','#8ac04a'],bone:['#e6dccb','#c8bca8','#fff6e8','#9a8e7a'],
   stone:['#6a6a7a','#8a8a96','#4a4a56','#a8a8b4'],ghost:['#7fe0d0','#b8f0ff','#5a9ab0','#e8ffff'],ember:['#ff8a3a','#ffd070','#ff5a1a','#c83a10']};
 let stains=[];
@@ -1300,9 +1310,9 @@ function hitBoss(dmg){
   hitstop=5;shake=Math.max(shake,4);sfx('hit');
   if(b.hp<=0){sfx('bossdie');b.state='dead';gainXp(BOSS_XP[b.kind]||40);b.t=110;b.vx=0;b.sweep=null;waves=[];shots=[];zones=[];shake=14;hitstop=14;
     ents.forEach(e=>{if(e.summoned)e.dead=true});
-    save[{mino:'bossDead',medusa:'boss2Dead',cerb:'boss3Dead',ares:'boss4Dead',beast:'boss5Dead',clock:'boss6Dead',banner:'boss7Dead',weaver:'boss8Dead',heart:'boss9Dead',widow:'boss10Dead',colossus:'boss11Dead',spirit:'boss12Dead',jailer:'boss13Dead',statue:'boss14Dead',queen:'boss15Dead',tornado:'boss16Dead',priest:'boss17Dead'}[b.kind]]=true}
+    save[{mino:'bossDead',medusa:'boss2Dead',cerb:'boss3Dead',ares:'boss4Dead',beast:'boss5Dead',clock:'boss6Dead',banner:'boss7Dead',weaver:'boss8Dead',heart:'boss9Dead',widow:'boss10Dead',colossus:'boss11Dead',spirit:'boss12Dead',jailer:'boss13Dead',statue:'boss14Dead',queen:'boss15Dead',tornado:'boss16Dead',priest:'boss17Dead',digger:'boss18Dead',fever:'boss19Dead',echo:'boss20Dead',dreamer:'boss21Dead'}[b.kind]]=true}
 }
-const BOSS_XP={mino:30,medusa:36,cerb:42,ares:48,beast:40,clock:60,banner:60,weaver:55,heart:120,widow:70,colossus:75,spirit:70,jailer:75,statue:80,queen:85,tornado:90,priest:150};
+const BOSS_XP={mino:30,medusa:36,cerb:42,ares:48,beast:40,clock:60,banner:60,weaver:55,heart:120,widow:70,colossus:75,spirit:70,jailer:75,statue:80,queen:85,tornado:90,priest:150,digger:110,fever:120,echo:140,dreamer:220};
 function doHits(bl,dmg){
   for(const b of bl){
     const pts=[[b.x,b.y,10],[(b.hx+b.x)/2,(b.hy+b.y)/2,6],[b.hx+(b.x-b.hx)*.78,b.hy+(b.y-b.hy)*.78,7]];
@@ -1606,6 +1616,13 @@ function bossDeath(b){
     showMsg({n:'Flechas de Fogo',d:'Suas flechas carregadas agora queimam: causam +1 de dano e atravessam tudo.'})}
   else if(b.kind==='priest'){B17=null;boss=null;setDoor17(false);save.maxHp+=2;P.hp=maxHp();setTrack('explore');ents.forEach(e=>{if(e.summoned)e.dead=true});
     scene(...MEMS[9],after(()=>showMsg({n:'Coração da Cinza',d:'Vida máxima +2. Kalas caiu. A montanha perdeu a única voz que falava por ela.'})))}
+  else if(b.kind==='digger'){B18=null;boss=null;setDoor18(false);setDreamExit(1,true);ents.forEach(e=>{if(e.summoned)e.dead=true});setTrack('explore');
+    scene(...DREAM_MEMS[0],after(()=>giveWeapon('shovel')))}
+  else if(b.kind==='fever'){B19=null;boss=null;setDoor19(false);setDreamExit(2,true);ents.forEach(e=>{if(e.summoned)e.dead=true});setTrack('explore');
+    scene(...DREAM_MEMS[1],after(()=>giveCharm('febre')))}
+  else if(b.kind==='echo'){B20=null;boss=null;setDoor20(false);setDreamExit(3,true);save.ab.echo=true;save.maxHp++;P.hp=maxHp();updateAbil();setTrack('explore');
+    scene(...DREAM_MEMS[2],after(()=>showMsg({n:'Passo do Eco',d:'Vida máxima +1. Agora a investida deixa para trás um eco que explode e machuca quem estiver perto.'})))}
+  else if(b.kind==='dreamer'){B21=null;boss=null;setDoor21(false);ents.forEach(e=>{if(e.summoned)e.dead=true});save.flags.sonho=1;setTrack(null);persist();scene('O nome',DREAM_END,victory)}
   else if(b.kind==='heart'){B9=null;boss=null;setTrack(null);persist();scene(endingTitle(),endingLines(),victory)}
   else if(b.kind==='beast'){B5=null;boss=null;setDoor5(false);save.maxHp++;P.hp=maxHp();save.ab.beast=true;updateAbil();setTrack('explore');persist();
     showMsg({n:'Chifre da Besta',d:'Sua vida máxima aumentou em 1. A Erupção ficou maior e mais forte. (+20 cinzas)'})}
@@ -2089,7 +2106,7 @@ function updateBoss(){
   if(b.state==='dead'){bossDeath(b);return}
   if(b.flash>0)b.flash--;
   if(b.state.endsWith('W')&&b.t===WARN_T+1)sfx('warn');
-  ({mino:updMino,medusa:updMedusa,cerb:updCerb,ares:updAres,beast:updBeast,clock:updClock,banner:updBanner,weaver:updWeaver,heart:updHeart,widow:updWidow,colossus:updColossus,spirit:updSpirit,jailer:updJailer,statue:updStatue,queen:updQueen,tornado:updTornado,priest:updPriest})[b.kind](b);
+  ({mino:updMino,medusa:updMedusa,cerb:updCerb,ares:updAres,beast:updBeast,clock:updClock,banner:updBanner,weaver:updWeaver,heart:updHeart,widow:updWidow,colossus:updColossus,spirit:updSpirit,jailer:updJailer,statue:updStatue,queen:updQueen,tornado:updTornado,priest:updPriest,digger:updDigger,fever:updFever,echo:updEcho,dreamer:updDreamer})[b.kind](b);
 }
 /* ===== chefes do leste ===== */
 function mkClock(){return{kind:'clock',name:'O GUARDIÃO DAS HORAS',x:201*TS,y:9*TS-66,w:28,h:66,hp:56,max:56,state:'sleep',t:0,dir:-1,vx:0,vy:0,flash:0,n:0}}
@@ -2450,7 +2467,7 @@ function updateShots(){
 // projéteis do jogador (Onda de Brasa): atravessam inimigos, param na parede
 function updatePShots(){
   pshots=pshots.filter(s=>{
-    if(s.kind==='arrow'||s.kind==='knife'){
+    if(s.kind==='arrow'||s.kind==='knife'||s.kind==='clod'){
       s.x+=s.vx;s.y+=s.vy;s.vy+=s.g;s.life--;
       if(s.kind==='arrow')for(const t of TARGETS)if(!tgOpen(t)&&overlap(s,targetBox(t))){openTarget(t);return false}
       if(solid(tile(Math.floor((s.x+s.w/2)/TS),Math.floor((s.y+s.h/2)/TS)))||s.life<=0){burst(s.x+6,s.y+1,s.fire?'#ff8a3a':'#c8c0b0',5,1.2,s.fire);sfx('land');return false}
@@ -2491,6 +2508,7 @@ function updateItems(){
     if(!overlap(it,P))return true;
     if(it.id==='arw'){P.arrows=Math.min(save.arrowsMax,P.arrows+3);sfx('blip');return false}
     if(it.id.startsWith('w_')){save.taken.push(it.id);burst(it.x+5,it.y+6,'#d0b0ff',24,2.5,true);giveWeapon(it.id.slice(2));return false}
+    if(it.id.startsWith('lem')){save.taken.push(it.id);sfx('altar');burst(it.x+5,it.y+6,'#c8b8ff',22,2,true);persist();readLem(it.id);return false}
     if(it.id.startsWith('eco')){save.taken.push(it.id);sfx('altar');burst(it.x+5,it.y+6,'#9ad8ff',20,2,true);persist();readEco(it.id);return false}
     if(it.id==='orb'){P.hp=Math.min(maxHp(),P.hp+1);burst(it.x+3,it.y+3,'#ff6a5a',6,1.5,true);sfx('orb');return false}
     sfx('pickup');
@@ -2632,7 +2650,8 @@ talkEl.addEventListener('click',advanceTalk);
 /* cenas de cinema: faixas pretas, o mundo ao fundo com a câmera passeando, texto letra por letra e cartão de capítulo */
 const CHAPTERS={'Olimpo, dez anos depois':'O terceiro toque','Memória · A festa':'A noite da colheita','Memória · As catacumbas':'A menina do livro',
   'Memória · A cova':'Mais uma noite','Memória · O relógio':'Meia-noite e três','Memória · O juramento':'O juramento da guarda','Câmara do Sino':'O sineiro',
-  'O fundo da montanha':'O coração da montanha','Memória · A prisão':'A prisão do culto','Memória · O pedido':'O pedido'};
+  'O fundo da montanha':'O coração da montanha','Memória · A prisão':'A prisão do culto','Memória · O pedido':'O pedido',
+  'A Fenda do Sonho':'O sonho da montanha','Memória · O primeiro coveiro':'O primeiro coveiro','Memória · Três noites':'Três noites','Memória · O que fica':'O que fica','O nome':'O nome'};
 const ROM=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
 function scene(title,panels,done){
   state='scene';showMap=false;for(const k in keys)keys[k]=false;for(const k in tapped)tapped[k]=false;
@@ -2706,7 +2725,7 @@ function hintsCheck(){
   if(!hints.npc&&nearNpc()){hints.npc=1;say(touchDev?'Aperte baixo perto de alguém para conversar':'Aperte baixo ou E perto de alguém para conversar')}
   if(!hints.styx&&zone==='Rio de Cinza'){hints.styx=1;setTimeout(()=>say('A cinza do rio queima a alma'),2600)}
   if(tile(164,35)==='S'&&tx>=158&&tx<=164&&ty>=32&&ty<=37&&hints.bellAt!==emberCount()){hints.bellAt=emberCount();say('A porta do sino pede cinco brasas ('+emberCount()+' de 5)')}
-  if(!save.flags.under&&ty>=56){save.flags.under=1;persist();say('Você encontrou o Submundo')}
+  if(!save.flags.under&&ty>=56&&tx<339){save.flags.under=1;persist();say('Você encontrou o Submundo')}
   if(!hints.tower&&zone==='Torre do Relógio'){hints.tower=1;setTimeout(()=>say('Lá em cima, um relógio parado'),2400)}
   for(const c of CRACKS){if(hints['ck'+c.id]||tile(c.x,c.y)!=='C')continue;
     if(Math.abs(tx-c.x)<=4&&ty>=c.y-6&&ty<=c.y){hints['ck'+c.id]=1;say(c.msg)}}
@@ -2716,6 +2735,7 @@ function hintsCheck(){
 /* ---------- gráficos ---------- */
 function rng(seed){return()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646}}
 const PALS={
+  dream:{b:'#2c2744',hi:'#584e84',dk:'#14101f',sp:['#332d4e','#26213a','#3a3358'],top:'#6a5aa8',top2:'#b0a0e8'},
   ruins:{b:'#5d4b43',hi:'#8f7560',dk:'#372c28',sp:['#6b574d','#4f403a','#685249'],top:'#6f7d3a',top2:'#8d9a48'},
   cave:{b:'#2b3940',hi:'#4d6873',dk:'#162026',sp:['#33444c','#243139','#3b4e57'],top:'#2f6b66',top2:'#4b9a8c'},
   temple:{b:'#4b2b2a',hi:'#80503f',dk:'#281514',sp:['#57312f','#3d2221','#603836'],top:'#b8892f',top2:'#e0b050'},
@@ -2757,7 +2777,7 @@ function buildTiles(){
   g.fillStyle='#ffb070';g.fillRect(9,6,1,1);g.fillRect(12,12,1,1);
   TILES.crack=c;
 }
-const palKey=(tx,ty)=>ty>=55?(ty>=79?(tx<=231?'sanct':'gstone'):tx<=71?'root':tx<=151?'prison':tx<=231?'sunk':'gstone'):(ty>=39&&tx>=149&&tx<179)?'heart':tx>=262?(ty<=8?'marble':ty<=27?'port':'mine'):tx>=179?(ty>=39?'nest':ty<=9?'bronze':tx<=187?'bronze':ty>=26?'garden':'guard'):(ty>=40&&tx<72)?'swamp':(ty>=27&&tx>=109)?(tx>=165?'temple':'styx'):tx>=152?'marble':tx>=109?'forge':(ty>=27&&tx<63)?'cave':tx>=46?'temple':'ruins';
+const palKey=(tx,ty)=>tx>=339?'dream':ty>=55?(ty>=79?(tx<=231?'sanct':'gstone'):tx<=71?'root':tx<=151?'prison':tx<=231?'sunk':'gstone'):(ty>=39&&tx>=149&&tx<179)?'heart':tx>=262?(ty<=8?'marble':ty<=27?'port':'mine'):tx>=179?(ty>=39?'nest':ty<=9?'bronze':tx<=187?'bronze':ty>=26?'garden':'guard'):(ty>=40&&tx<72)?'swamp':(ty>=27&&tx>=109)?(tx>=165?'temple':'styx'):tx>=152?'marble':tx>=109?'forge':(ty>=27&&tx<63)?'cave':tx>=46?'temple':'ruins';
 const hash=(x,y)=>((x*73856093)^(y*19349663))>>>0;
 
 function ridge(par,base,amp,f1,f2,seed,col){
@@ -2994,7 +3014,7 @@ function surfaceProp(k,x,y,h){
   else if((k==='guard'||k==='gstone')&&r===6){ctx.fillStyle='#4a4a52';ctx.fillRect(x+4,y-3,8,3);ctx.fillStyle='#6a6a74';ctx.fillRect(x+4,y-3,8,1)}
 }
 // névoa e tom de cor de cada região
-const ZONE_TINT={ruins:'#ff9a50',cave:'#3a8aa8',temple:'#ffb070',forge:'#ff6a2a',swamp:'#6ab04a',styx:'#3ac8b0',marble:'#ffe0b0',bronze:'#d9a441',guard:'#8a9ab0',garden:'#9aa8c0',
+const ZONE_TINT={dream:'#b8a8ff',ruins:'#ff9a50',cave:'#3a8aa8',temple:'#ffb070',forge:'#ff6a2a',swamp:'#6ab04a',styx:'#3ac8b0',marble:'#ffe0b0',bronze:'#d9a441',guard:'#8a9ab0',garden:'#9aa8c0',
   nest:'#a070d0',heart:'#ff4a1a',port:'#5aa0a0',mine:'#d08a3a',root:'#8ac04a',prison:'#7a8a9a',sunk:'#3ab8c8',gstone:'#9a9ab0',sanct:'#d0302a'};
 function hexA(hx,a){const n=parseInt(hx.slice(1),16);return`rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
 function drawAtmosphere(cx){
@@ -3314,6 +3334,8 @@ function drawItems(){
     if(it.id==='hp'||it.id==='hp2'||it.id==='hp3'){ctx.fillStyle='#c8322a';ctx.fillRect(x+1,y+2,3,3);ctx.fillRect(x+6,y+2,3,3);ctx.fillRect(x,y+3,10,3);ctx.fillRect(x+1,y+6,8,2);ctx.fillRect(x+3,y+8,4,2);ctx.fillStyle='#ffb0a0';ctx.fillRect(x+2,y+3,1,1)}
     if(it.id==='jump'){ctx.fillStyle='#d9a441';ctx.fillRect(x,y+8,10,3);ctx.fillRect(x+6,y+4,3,5);ctx.fillStyle='#fff6e0';ctx.fillRect(x+1,y+2,4,2);ctx.fillRect(x,y+4,5,2);ctx.fillRect(x+2,y+6,3,1)}
     if(it.id==='dash'){ctx.fillStyle='#e2683c';ctx.beginPath();ctx.moveTo(x+5,y);ctx.lineTo(x+10,y+6);ctx.lineTo(x+5,y+12);ctx.lineTo(x,y+6);ctx.fill();ctx.fillStyle='#ffe2b0';ctx.fillRect(x+4,y+4,2,4)}
+    if(it.id.startsWith('lem')){const g=.5+.3*Math.sin(frames*.08);ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=`rgba(170,140,255,${g*.5})`;ctx.fillRect(x-4,y-4,18,20);ctx.restore();
+      ctx.fillStyle='#e8e0ff';ctx.fillRect(x+1,y+1,8,10);ctx.fillStyle='#8a7ac8';ctx.fillRect(x+2,y+3,6,1);ctx.fillRect(x+2,y+5,5,1);ctx.fillRect(x+2,y+7,6,1)}
     if(it.id==='knives'){ctx.fillStyle='#6a4a2a';ctx.fillRect(x+1,y+8,3,3);ctx.fillRect(x+6,y+8,3,3);ctx.fillStyle='#d8dce8';ctx.fillRect(x+2,y+1,1,7);ctx.fillRect(x+7,y+1,1,7);ctx.fillStyle='#fff';ctx.fillRect(x+2,y,1,1);ctx.fillRect(x+7,y,1,1)}
     if(it.id==='wall'){ctx.fillStyle='#8a5a22';ctx.fillRect(x+1,y+3,8,8);ctx.fillStyle='#d4a450';ctx.fillRect(x+1,y+3,8,2);ctx.fillRect(x+2,y,2,4);ctx.fillRect(x+5,y,2,4);ctx.fillStyle='#ff8a3a';ctx.fillRect(x+3,y+7,4,2)}
   }
@@ -3396,7 +3418,7 @@ function drawCorpse(c){
     ctx.beginPath();ctx.rect(c.x-24,top,c.w+48,bot-top);ctx.clip();drawEnemy(c);ctx.restore()}
 }
 function drawEnemies(){
-  for(const e of ents)if(!e.dead)drawEnemy(e);
+  for(const e of ents)if(!e.dead){VAR_OVR=e.dream?'violet':null;drawEnemy(e)}VAR_OVR=null;
   for(const c of corpses)drawCorpse(c);
 }
 function drawEnemy(e){
@@ -3614,7 +3636,7 @@ function drawAres(b){
   if(big&&!o&&!OVR){ctx.globalAlpha=.25;ctx.fillStyle='#ff5a1a';ctx.fillRect(X-3,Y-6,b.w+6,b.h+6);ctx.globalAlpha=1}
 }
 function drawBosses(){if(B1)drawMino(B1);if(B2)drawMedusa(B2);if(B3)drawCerb(B3);if(B4)drawAres(B4);if(B5)drawBeast(B5);
-  if(B6)drawClock(B6);if(B7)drawBanner(B7);if(B8)drawWeaver(B8);if(B9)drawHeart(B9);if(B10)drawWidow(B10);if(B11)drawColossus(B11);for(const b of [B12,B13,B14,B15,B16,B17])if(b)drawSubBoss(b)}
+  if(B6)drawClock(B6);if(B7)drawBanner(B7);if(B8)drawWeaver(B8);if(B9)drawHeart(B9);if(B10)drawWidow(B10);if(B11)drawColossus(B11);for(const b of [B12,B13,B14,B15,B16,B17])if(b)drawSubBoss(b);for(const b of [B18,B19,B20,B21])if(b)drawDreamBoss(b)}
 const jitW=b=>b.state.endsWith('W')?((frames>>1)%2?1:-1):0;
 function drawClock(b){
   if(!inView(b.x,b.y,90))return;const x=b.x+b.w/2+jitW(b),y=b.y+b.h,v=bossVariant(b);
@@ -3672,6 +3694,7 @@ function drawZones(){
 }
 function drawWaves(){for(const w of waves)flame(Math.round(w.x)+6,w.y+12,1.3);
   for(const s of pshots){
+    if(s.kind==='clod'){ctx.fillStyle='#5a4030';ctx.fillRect(Math.round(s.x),Math.round(s.y),6,6);ctx.fillStyle='#8a6a4a';ctx.fillRect(Math.round(s.x)+1,Math.round(s.y)+1,3,2);continue}
     if(s.kind==='knife'){const x=Math.round(s.x),y=Math.round(s.y),d=Math.sign(s.vx),f=(frames>>2)%2;ctx.fillStyle='#d8dce8';
       if(f){ctx.fillRect(d>0?x+3:x,y,5,1);ctx.fillStyle='#fff';ctx.fillRect(d>0?x+7:x,y,1,1);ctx.fillStyle='#6a4a2a';ctx.fillRect(d>0?x:x+5,y,3,2)}
       else{for(let i=0;i<4;i++)ctx.fillRect(x+2+i,y-2+i,1,1);ctx.fillStyle='#6a4a2a';ctx.fillRect(x+1,y-3,2,2)}continue}
@@ -3686,6 +3709,7 @@ function drawWaves(){for(const w of waves)flame(Math.round(w.x)+6,w.y+12,1.3);
 function drawShots(){
   for(const s of shots){
     const x=Math.round(s.x),y=Math.round(s.y);
+    if(s.kind==='eknife'){ctx.fillStyle='#b8a8ff';ctx.fillRect(x,y,8,2);ctx.fillStyle='#fff';ctx.fillRect(s.vx>0?x+7:x,y,1,1);continue}
     if(s.kind==='spear'){ctx.fillStyle='#8a5a2a';ctx.fillRect(x,y+1,16,2);ctx.fillStyle='#e8e8f0';ctx.fillRect(s.vx>0?x+12:x,y,4,4);ctx.fillStyle='#ffb040';ctx.fillRect(s.vx>0?x:x+14,y+1,2,2);continue}
     if(s.kind==='gear'){ctx.save();ctx.translate(x+5,y+5);ctx.rotate(s.x*.12);ctx.fillStyle='#c8902f';for(let k=0;k<6;k++){ctx.rotate(Math.PI/3);ctx.fillRect(3,-1.5,3,3)}
       ctx.beginPath();ctx.arc(0,0,4,0,7);ctx.fill();ctx.fillStyle='#4a3216';ctx.fillRect(-1,-1,2,2);ctx.restore();continue}
@@ -3953,8 +3977,15 @@ function objective(){
   if(emberCount()<5)return 'Acenda as brasas do sino ('+emberCount()+'/5): os três cães, o Guardião das Horas e Lúcio';
   if(!save.boss4Dead)return 'Abra a porta do sino e enfrente Andros, o sineiro';
   if(!save.boss9Dead)return bossGoal(mkHeart);
-  if(!save.flags.under)return 'Ainda há algo embaixo da cidade. Procure chão rachado';
+  if(!save.flags.under&&!save.boss17Dead)return 'Ainda há algo embaixo da cidade. Procure chão rachado';
   if(!save.boss17Dead)return 'Desça ao fundo do Submundo e encontre o homem de manto';
+  if(!save.flags.sonho){
+    if(!save.flags.rift)return 'Volte ao Trono do Sumo-Sacerdote: uma fenda se abriu na parede';
+    if(!save.boss18Dead)return bossGoal(mkDigger);
+    if(!save.boss19Dead)return bossGoal(mkFever);
+    if(!save.boss20Dead)return bossGoal(mkEcho);
+    if(!save.boss21Dead)return bossGoal(mkDreamer);
+  }
   const n=ECOS.filter(e=>save.taken.includes(e.id)).length;
   if(n<ECOS.length)return 'Junte os Ecos, os bilhetes de Teo ('+n+'/'+ECOS.length+')';
   return 'Olimpo está em paz. Por enquanto.';
@@ -3977,7 +4008,16 @@ const THOUGHTS={'Ruínas de Olimpo':'Toda noite eu acordo aqui. Toda noite a mes
   'Mina de Bronze':'Marcas de mãos na parede. Alguém cavou até sangrar.',
   'Bosque de Raízes':'Debaixo da cidade, uma floresta inteira. Quem plantou isto?',
   'Prisão de Cinza':'Celas cheias. Ninguém foi solto em dez anos.',
-  'Santuário Profundo':'Velas novas. Alguém desce aqui toda noite.'};
+  'Santuário Profundo':'Velas novas. Alguém desce aqui toda noite.',
+  'Margem do Sonho':'Não tem cinza aqui. Tem cheiro de terra molhada.',
+  'Casa de Eurídice':'É a nossa casa. A mesa ainda tem a toalha que ela bordou.',
+  'Cemitério de Dimas':'Foi aqui que eu aprendi a cavar. E a dizer o nome.',
+  'Estrada da Caravana':'A estrada da costa. Meu pai foi embora por aqui naquele inverno.',
+  'Quarto da Febre':'Eu conheço este calor. Três noites sem dormir.',
+  'Praça da Festa Sonhada':'A festa, parada no meio da música. Ninguém pisca.',
+  'Espelho do Eco':'Tem alguém aqui com a minha letra nas mãos.',
+  'Cume do Sonho':'Lá em cima, a montanha está de olhos fechados. Por enquanto.',
+  'Olho da Montanha':'Ela está acordada. E está com medo.'};
 function storyTick(){
   if(state!=='play')return;
   if(frames%30===0){const o=objective();if(o!==objLast){objLast=o;objT=420}}
@@ -4100,7 +4140,7 @@ function render(){
   const cx=snap(cam.x+sx),cy=snap(cam.y+sy);
   drawBg(cx,cy);
   ctx.save();ctx.translate(-cx,-cy);
-  drawWorldBg(cx);drawCrystals();drawTiles(cx,cy);drawStains();drawBraziers();drawStatues();drawChests();drawTraps();drawTargets();drawSunkColumns();drawWatchers();drawThrone();outlined(drawNpcs);drawItems();outlined(drawEnemies);outlined(drawBosses);drawBossWarn();drawWaves();drawZones();drawShots();
+  drawWorldBg(cx);drawDreamBg();drawCrystals();drawTiles(cx,cy);drawStains();drawBraziers();drawStatues();drawRifts();drawChests();drawTraps();drawTargets();drawSunkColumns();drawWatchers();drawThrone();outlined(drawNpcs);drawItems();outlined(drawEnemies);outlined(drawBosses);drawBossWarn();drawWaves();drawZones();drawShots();
   drawGhosts();drawParticles(false);if(state!=='dead')drawTrails();outlined(drawHero);
   ctx.restore();
   drawLighting(cx,cy);
@@ -4214,7 +4254,7 @@ const TRACKS={
   boss9:bossTrack(170,-7),
   boss10:bossTrack(126,4),
   boss11:bossTrack(140,-4),
-  boss12:bossTrack(148,-1),boss13:bossTrack(132,-6),boss14:bossTrack(140,6),boss15:bossTrack(156,1),boss16:bossTrack(164,-2),boss17:bossTrack(176,-5),
+  boss12:bossTrack(148,-1),boss13:bossTrack(132,-6),boss14:bossTrack(140,6),boss15:bossTrack(156,1),boss16:bossTrack(164,-2),boss17:bossTrack(176,-5),boss18:bossTrack(124,-3),boss19:bossTrack(150,2),boss20:bossTrack(170,0),boss21:bossTrack(138,-7),
 };
 function schedule(){
   if(!AU.ctx||AU.ctx.state!=='running')return;
@@ -4252,15 +4292,15 @@ function titleScreen(){
 }
 function victory(){
   state='win';setTrack(null);sfx('pickup');const m=Math.floor(frames/3600),s=Math.floor(frames/60)%60;
-  const nb=['bossDead','boss2Dead','boss3Dead','boss4Dead','boss5Dead','boss6Dead','boss7Dead','boss8Dead','boss9Dead','boss10Dead','boss11Dead','boss12Dead','boss13Dead','boss14Dead','boss15Dead','boss16Dead','boss17Dead'].filter(k=>save[k]).length;
+  const nb=['bossDead','boss2Dead','boss3Dead','boss4Dead','boss5Dead','boss6Dead','boss7Dead','boss8Dead','boss9Dead','boss10Dead','boss11Dead','boss12Dead','boss13Dead','boss14Dead','boss15Dead','boss16Dead','boss17Dead','boss18Dead','boss19Dead','boss20Dead','boss21Dead'].filter(k=>save[k]).length;
   const rel=['hp','hp2','hp3','jump','dash','wall','pg1','pg2','pg3','pg4'].filter(k=>save.taken.includes(k)).length,tec=TECHS.filter(t=>save.tech[t.id]).length;
   screen(`<span class="eyebrow">Fim</span><h2>Cinzas do Olimpo</h2>
-  ${save.boss17Dead?'':'<p><b>Pista:</b> o culto ainda vive lá embaixo. Procure chãos rachados soltando fumaça: no pântano, no rio de cinza e no fundo da mina.</p>'}<p>${endingTag()} Chefes vencidos: ${nb} de 17 · ecos: ${ecoCount()} de ${ECOS.length} · técnicas: ${tec} de 4 · relíquias: ${rel} de 10 · baús: ${save.chests.length} de ${CHESTS.length} · amuletos: ${save.charms.length} de ${Object.keys(CHARMS).length} · vida máxima ${save.maxHp}${save.flags.bell?' · Lino voltou para casa':''}. Tempo: ${m}:${String(s).padStart(2,'0')}.</p>
+  ${save.boss17Dead?'':'<p><b>Pista:</b> o culto ainda vive lá embaixo. Procure chãos rachados soltando fumaça: no pântano, no rio de cinza e no fundo da mina.</p>'}<p>${endingTag()} ${save.flags.sonho?'Você terminou o Sonho da Montanha. ':''}Chefes vencidos: ${nb} de 21 · ecos: ${ecoCount()} de ${ECOS.length} · técnicas: ${tec} de 4 · relíquias: ${rel} de 10 · baús: ${save.chests.length} de ${CHESTS.length} · amuletos: ${save.charms.length} de ${Object.keys(CHARMS).length} · vida máxima ${save.maxHp}${save.flags.bell?' · Lino voltou para casa':''}. Tempo: ${m}:${String(s).padStart(2,'0')}.</p>
   <p>Obrigado por jogar.</p>
   <div class="row"><button class="btn" data-go="ngplus">Nova Noite+</button><button class="ghostbtn" data-go="start">Começar do zero</button></div>`);
 }
 function updateAbil(){
-  const a=['<b>'+curW().n+'</b>'+(save.weapons.length>1?' (T troca)':''),'<b>Golpe de queda</b>','<b>Erupção</b>'];if(save.ab.jump)a.push('<b>Pulo duplo</b>');if(save.ab.dash)a.push('<b>Investida</b>');if(save.ab.wall)a.push('<b>Salto na parede</b>');if(save.ab.beast)a.push('<b>Erupção maior</b>');if(save.ab.knives)a.push('<b>Adagas</b>');if(save.ab.bow)a.push('<b>Arco</b>');if(save.ab.fire)a.push('<b>Flechas de fogo</b>');if(save.ab.glide)a.push('<b>Planar</b>');
+  const a=['<b>'+curW().n+'</b>'+(save.weapons.length>1?' (T troca)':''),'<b>Golpe de queda</b>','<b>Erupção</b>'];if(save.ab.jump)a.push('<b>Pulo duplo</b>');if(save.ab.dash)a.push('<b>Investida</b>');if(save.ab.wall)a.push('<b>Salto na parede</b>');if(save.ab.beast)a.push('<b>Erupção maior</b>');if(save.ab.knives)a.push('<b>Adagas</b>');if(save.ab.bow)a.push('<b>Arco</b>');if(save.ab.fire)a.push('<b>Flechas de fogo</b>');if(save.ab.glide)a.push('<b>Planar</b>');if(save.ab.echo)a.push('<b>Passo do Eco</b>');
   for(const t of TECHS)if(save.tech[t.id])a.push('<b>'+t.n+'</b>');
   if(save.swordLv)a.push('<b>Espada +'+save.swordLv+'</b>');a.push('<b>'+save.flaskMax+' frascos</b>');
   if(save.equip.length)a.push('Amuletos: '+save.equip.map(id=>'<b>'+CHARMS[id].n+'</b>').join(', '));if(save.ng)a.push('<b>Noite+ '+save.ng+'</b>');
@@ -4293,6 +4333,8 @@ panel.addEventListener('click',e=>{
 function continueFrom(s){
   const f=freshSave();save=Object.assign(f,s);save.ab=Object.assign(f.ab,s.ab||{});save.tech=Object.assign({},s.tech||{});save.flags=Object.assign({},s.flags||{});
   seen=new Uint8Array(W*H);if(typeof s.seenStr==='string'&&s.seenStr.length===W*H)for(let i=0;i<W*H;i++)seen[i]=s.seenStr.charCodeAt(i)===49?1:0;
+  else if(typeof s.seenStr==='string'&&s.seenStr.length===W_OLD*H)for(let y=0;y<H;y++)for(let x=0;x<W_OLD;x++)seen[y*W+x]=s.seenStr.charCodeAt(y*W_OLD+x)===49?1:0;
+  if([12,13,14,15,16,17].some(i=>save['boss'+i+'Dead']))save.flags.under=1; // saves de antes da marcação do Submundo
   delete save.seenStr;hints={};frames=0;reset();updateAbil();state='play';scr.hidden=true;
 }
 
@@ -4370,6 +4412,290 @@ function endingLines(){
   return trueEnd()?[...base,...extra,last,...TRUE_END]:[...base,...extra,last];
 }
 
+/* ===================== ATO II · O SONHO DA MONTANHA =====================
+   Depois que Kalas cai, uma fenda se abre no trono. Do outro lado fica tudo o que a montanha comeu:
+   a cidade, a noite repetida e o que Teo esquece toda manhã. Quatro faixas, de baixo para cima:
+   A (y86-97) Margem, Casa de Eurídice e Cemitério de Dimas · B (y60-83) Estrada da Caravana e Quarto da Febre
+   C (y30-57) Praça da Festa Sonhada e Espelho do Eco · D (y3-27) Cume do Sonho e Olho da Montanha */
+function dreamZone(tx,ty){
+  if(ty>=84)return tx<=372?'Margem do Sonho':tx<=428?'Casa de Eurídice':'Cemitério de Dimas';
+  if(ty>=58)return tx<=369?'Quarto da Febre':'Estrada da Caravana';
+  if(ty>=28)return tx<=422?'Praça da Festa Sonhada':'Espelho do Eco';
+  return tx<=373?'Olho da Montanha':'Cume do Sonho';
+}
+function setDoor18(c){for(let r=90;r<=97;r++)grid[r][429]=c?'#':'.'}
+function setDoor19(c){for(let r=76;r<=83;r++)grid[r][369]=c?'#':'.'}
+function setDoor20(c){for(let r=50;r<=57;r++)grid[r][423]=c?'#':'.'}
+function setDoor21(c){for(let r=18;r<=27;r++)grid[r][373]=c?'#':'.'}
+// saída de cada arena: um buraco no teto e degraus que só aparecem depois do chefe
+const DEXIT={1:{hole:[452,84,4,2],plats:[[448,95],[452,92],[448,89],[452,86]]},
+  2:{hole:[343,58,4,2],plats:[[347,81],[343,78],[347,75],[343,72],[347,69],[343,66],[347,63],[343,61]]},
+  3:{hole:[452,28,4,2],plats:[[452,55],[448,52],[452,49],[448,46],[452,43],[448,40],[452,37],[448,34],[452,31]]}};
+function setDreamExit(n,open){const d=DEXIT[n],[x,y,w,h]=d.hole;
+  for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)grid[j][i]=open?'.':'#';
+  for(const [px,py] of d.plats)for(let i=px;i<px+4;i++)grid[py][i]=open?'=':'.'}
+function buildDream(f){
+  f(339,0,W-339,H,'#');
+  // A: Margem, Casa de Eurídice, Cemitério de Dimas (arena x430-457)
+  f(341,86,117,12,'.');f(429,86,1,4,'#');
+  f(378,94,5,1,'=');f(386,91,4,1,'=');f(390,95,2,3,'#');f(395,93,5,1,'=');f(401,90,3,1,'=');f(408,94,4,1,'=');f(411,86,2,8,'#');
+  f(398,97,3,1,'W');f(417,94,6,1,'=');f(418,97,4,1,'^');
+  // B: Estrada da Caravana e Quarto da Febre (arena x341-368)
+  f(341,60,117,24,'.');f(369,60,1,16,'#');
+  f(380,60,3,4,'#');f(420,60,4,3,'#');f(440,60,3,5,'#');
+  f(430,83,6,1,'W');f(410,83,8,1,'W');f(390,83,6,1,'W');f(431,80,4,1,'=');f(411,80,3,1,'=');f(415,78,3,1,'=');f(391,80,4,1,'=');
+  f(400,78,2,6,'#');f(396,75,3,1,'=');f(376,74,6,1,'=');f(424,72,5,1,'=');f(446,74,6,1,'=');
+  // C: Praça da Festa Sonhada e Espelho do Eco (arena x424-457)
+  f(341,30,117,28,'.');f(423,30,1,20,'#');
+  f(366,54,6,1,'=');f(376,51,5,1,'=');f(386,54,6,1,'=');f(396,50,4,1,'=');f(404,53,6,1,'=');f(414,55,4,1,'=');
+  f(390,55,4,3,'#');f(380,40,8,1,'=');f(398,42,6,1,'=');f(408,57,4,1,'^');
+  // D: Cume do Sonho e Olho da Montanha (arena x341-372)
+  f(341,3,117,25,'.');f(373,3,1,15,'#');
+  f(430,24,4,4,'#');f(415,22,3,6,'#');f(400,25,6,1,'=');f(392,21,4,1,'=');f(384,24,4,1,'=');
+  f(405,27,8,1,'^');f(406,24,5,1,'=');f(420,27,4,1,'^');f(420,24,4,1,'=');
+  for(let n=1;n<=3;n++)setDreamExit(n,!!save['boss'+(17+n)+'Dead']);
+}
+STATUES.push({x:350,y:97},{x:446,y:83},{x:360,y:57},{x:440,y:27});
+ENEMY_SPAWNS.push(
+  {t:'zomb',x:380,y:97},{t:'ghoul',x:393,y:97},{t:'hound',x:404,y:97},{t:'shade',x:396,y:90},{t:'guard',x:414,y:97},{t:'zomb',x:424,y:97},
+  {t:'guard',x:440,y:83},{t:'garg',x:432,y:70},{t:'harp',x:418,y:70},{t:'brute',x:405,y:83},{t:'cult',x:386,y:83},{t:'ghoul',x:380,y:83},{t:'shade',x:377,y:70},{t:'hound',x:426,y:83},
+  {t:'cult',x:368,y:57},{t:'hop',x:375,y:57},{t:'guard',x:380,y:57},{t:'garg',x:384,y:40},{t:'brute',x:400,y:57},{t:'shadow',x:406,y:57},{t:'harp',x:395,y:42},{t:'zomb',x:415,y:57},{t:'ghoul',x:418,y:57},
+  {t:'guard',x:445,y:27},{t:'garg',x:435,y:10},{t:'harp',x:425,y:12},{t:'cult',x:401,y:24},{t:'brute',x:388,y:27},{t:'shadow',x:380,y:27},{t:'ghoul',x:395,y:27});
+// fendas: uma no trono do Kalas (aparece quando ele cai) e a volta, na Margem do Sonho
+const RIFTS=[{x:6,y:97,to:{x:347,y:97},on:()=>save.boss17Dead,dream:true},{x:343,y:97,to:{x:10,y:97},on:()=>true}];
+const riftBox=r=>({x:r.x*TS-2,y:(r.y-1)*TS,w:20,h:32});
+function updateRifts(){
+  if(P.riftCd>0){P.riftCd--;return}
+  for(const r of RIFTS){if(!r.on()||!inView(r.x*TS,r.y*TS,60))continue;
+    if(frames%3===0){const a=Math.random()*Math.PI*2;fxp.push({x:r.x*TS+8+Math.cos(a)*16,y:r.y*TS+Math.sin(a)*20,vx:-Math.cos(a)*.8,vy:-Math.sin(a)*.8,life:20,max:20,col:Math.random()<.5?'#b8a8ff':'#7a5ad0',size:1,add:true})}
+    if(overlap(P,riftBox(r))){P.x=r.to.x*TS+3;P.y=(r.to.y+1)*TS-22;P.vx=P.vy=0;P.riftCd=60;P.onStatue=-1;cam.x=P.x-VW/2;cam.y=P.y-VH/2;clampCam();shake=8;sfx('altar');
+      burst(P.x+5,P.y+11,'#b8a8ff',30,3,true);fxp.push({wave:true,x:P.x+5,y:P.y+11,R:40,life:20,max:20,col:'#b8a8ff',vx:0,vy:0});
+      if(r.dream&&!save.flags.rift){save.flags.rift=1;persist();scene('A Fenda do Sonho',DREAM_INTRO,()=>say('Margem do Sonho'))}return}}
+}
+function drawRifts(){
+  for(const r of RIFTS){if(!r.on()||!inView(r.x*TS,r.y*TS,60)||OVR)continue;const x=r.x*TS+8,y=r.y*TS-2;
+    ctx.save();ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(x,y,2,x,y,30);g.addColorStop(0,'rgba(200,180,255,.8)');g.addColorStop(.4,'rgba(120,80,220,.35)');g.addColorStop(1,'rgba(80,40,160,0)');
+    ctx.fillStyle=g;ctx.fillRect(x-30,y-30,60,60);ctx.restore();
+    ctx.fillStyle='#0a0612';ctx.beginPath();ctx.ellipse(x,y,6+Math.sin(frames*.1),15,0,0,7);ctx.fill();
+    ctx.strokeStyle='#c8b8ff';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(x,y,7+Math.sin(frames*.1),16,0,0,7);ctx.stroke()}
+}
+// fundo do sonho: cada faixa com a sua cor e silhuetas (casas, covas, postes da estrada, bandeirinhas e povo parado, o olho fechado no céu)
+function drawDreamBg(){
+  if(cam.x+VW<339*TS)return;
+  const X0=339*TS,X1=W*TS,band=(y0,y1,c0,c1)=>{const g=ctx.createLinearGradient(0,y0*TS,0,y1*TS);g.addColorStop(0,c0);g.addColorStop(1,c1);ctx.fillStyle=g;ctx.fillRect(X0,y0*TS,X1-X0,(y1-y0)*TS)};
+  band(84,98,'#1a1530','#302650');band(58,84,'#121a30','#28304e');band(28,58,'#22142c','#3e2644');band(1,28,'#0a0818','#221a3a');
+  ctx.fillStyle='#d8d0ff';for(let i=0;i<40;i++){const h=hash(i,77);ctx.globalAlpha=.25+.25*Math.sin(frames*.04+i);ctx.fillRect(X0+h%(X1-X0),3*TS+(h>>8)%(22*TS),1,1)}ctx.globalAlpha=1;
+  // A: a margem (rio parado, névoa, juncos e lanternas), as casas da rua de Eurídice e as covas sem nome
+  {const wy=98*TS-6;ctx.fillStyle='rgba(120,100,200,.18)';ctx.fillRect(341*TS,wy-40,32*TS,40);ctx.fillStyle='rgba(200,190,255,.12)';for(let i=0;i<8;i++)ctx.fillRect(341*TS+((i*61+frames*.3)%(32*TS)),wy-14-i%3*9,40,2);
+   ctx.strokeStyle='#241e3e';ctx.lineWidth=1;for(let i=0;i<30;i++){const x=341*TS+hash(i,21)%(32*TS),h=10+hash(i,22)%18;ctx.beginPath();ctx.moveTo(x,98*TS);ctx.quadraticCurveTo(x+Math.sin(frames*.03+i)*3,98*TS-h/2,x+2,98*TS-h);ctx.stroke()}
+   for(let i=0;i<4;i++){const x=(345+i*8)*TS,y=90*TS+Math.sin(frames*.04+i)*3;ctx.fillStyle='#3a2a50';ctx.fillRect(x,y-8,1,8);ctx.fillStyle='rgba(255,210,140,.85)';ctx.fillRect(x-2,y,5,6);ctx.save();ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(x,y+3,1,x,y+3,22);g.addColorStop(0,'rgba(255,200,120,.35)');g.addColorStop(1,'rgba(255,200,120,0)');ctx.fillStyle=g;ctx.fillRect(x-22,y-19,44,44);ctx.restore()}}
+  for(let i=0;i<6;i++){const x=(374+i*9)*TS,h=(4+hash(i,5)%3)*TS,y=98*TS-h;ctx.fillStyle='#16122a';ctx.fillRect(x,y,6*TS,h);ctx.beginPath();ctx.moveTo(x-6,y);ctx.lineTo(x+3*TS,y-28);ctx.lineTo(x+6*TS+6,y);ctx.fill();
+    ctx.fillStyle=`rgba(255,200,110,${.25+.15*Math.sin(frames*.05+i)})`;ctx.fillRect(x+20,y+18,8,8);ctx.fillRect(x+60,y+18,8,8)}
+  ctx.fillStyle='#1c1832';for(let i=0;i<9;i++){const x=(432+i*3)*TS,h=10+hash(i,9)%10;ctx.fillRect(x,98*TS-h,10,h);ctx.fillRect(x-3,98*TS-h+3,16,3)}
+  // B: postes e carroças paradas na estrada
+  ctx.fillStyle='#1a2038';for(let i=0;i<10;i++){const x=(372+i*9)*TS;ctx.fillRect(x,70*TS,3,14*TS);ctx.fillRect(x-6,70*TS,15,3)}
+  for(let i=0;i<3;i++){const x=(385+i*24)*TS;ctx.beginPath();ctx.ellipse(x+24,82*TS,30,18,0,Math.PI,0);ctx.fill();ctx.fillRect(x-4,82*TS,58,6)}
+  // C: bandeirinhas e o povo parado no meio da festa
+  for(let i=0;i<40;i++){const x=(342+i*2)*TS,y=33*TS+Math.sin(i*.8)*6;ctx.fillStyle=['#5a2a3a','#2a3a5a','#5a4a2a'][i%3];ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+16,y);ctx.lineTo(x+8,y+12);ctx.fill()}
+  ctx.fillStyle='#1e1426';for(let i=0;i<26;i++){const x=(344+i*3)*TS+hash(i,3)%12,y=58*TS;ctx.fillRect(x,y-22,8,22);ctx.beginPath();ctx.arc(x+4,y-26,5,0,7);ctx.fill()}
+  // D: o olho da montanha, fechado, no céu do cume
+  if(!B21||B21.state==='sleep'){ctx.strokeStyle='rgba(200,180,255,.35)';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(357*TS,22*TS,120,30,0,.15,Math.PI-.15);ctx.stroke()}
+}
+/* ---------- os quatro guardiões do sonho ---------- */
+function mkDigger(){return{kind:'digger',name:'DIMAS, O PRIMEIRO COVEIRO',x:448*TS,y:98*TS-44,w:22,h:44,hp:150,max:150,state:'sleep',t:0,dir:-1,vx:0,vy:0,flash:0,n:0}}
+function mkFever(){return{kind:'fever',name:'A FEBRE',x:355*TS,y:84*TS-100,w:40,h:36,hp:140,max:140,state:'sleep',t:0,dir:-1,vx:0,vy:0,flash:0,n:0,ph:0}}
+function mkEcho(){return{kind:'echo',name:'O ECO DE TEO',x:450*TS,y:58*TS-24,w:12,h:24,hp:170,max:170,state:'sleep',t:0,dir:-1,vx:0,vy:0,flash:0,n:0}}
+function mkDreamer(){return{kind:'dreamer',name:'A MONTANHA QUE SONHA',x:352*TS,y:28*TS-108,w:56,h:56,hp:240,max:240,state:'sleep',t:0,dir:-1,vx:0,vy:0,flash:0,n:0,ph:0}}
+const groundWaves=(b,fy,sp,life)=>{const y=fy-12;waves.push({x:b.x-12,y,w:12,h:12,vx:-sp,life},{x:b.x+b.w,y,w:12,h:12,vx:sp,life})};
+// Dimas: cava (ondas pelo chão), joga torrões, salta em cima de você, mãos de cinza saem da terra e chama os mortos sem nome
+function updDigger(b){
+  const floorY=98*TS,L=430*TS,R=458*TS;
+  if(b.state==='sleep'){if(P.x>431*TS&&P.y>86*TS){b.state='intro';b.t=80;setDoor18(true);say('Dimas, o primeiro coveiro');shake=8;sfx('roar')}return}
+  const pcx=P.x+P.w/2,bcx=b.x+b.w/2,rage=b.hp<=b.max/2?1.3:1,d=pcx-bcx;
+  if(rage>1&&!b.p2){b.p2=1;say('"Sem nome! Nenhuma delas tem nome!"');sfx('roar');shake=10}
+  healDrop(b,431,457,87*TS,'Uma romã rolou de uma cova! (+1 de vida)');
+  if(b.state==='idle'||b.state.endsWith('W'))b.dir=Math.sign(d)||b.dir;
+  switch(b.state){
+    case'intro':b.vx=0;b.t--;if(b.t<=0){b.state='idle';b.t=40}break;
+    case'idle':b.vx=Math.abs(d)>40?Math.sign(d)*.6*rage:0;b.t--;
+      if(b.t<=0){const seq=['dig','clods','leap','hands','dig','call','clods','leap'],nx=seq[b.n++%seq.length];b.vx=0;b.state=nx+'W';b.t={dig:32,clods:26,leap:24,hands:34,call:36}[nx];sfx(nx==='leap'?'charge':'charge2')}break;
+    case'digW':b.vx=0;b.t--;if(b.t<=0){groundWaves(b,floorY,3.2,100);if(rage>1)groundWaves(b,floorY,2,120);shake=10;sfx('slam');b.state='rec';b.t=46}break;
+    case'clodsW':b.vx=0;b.t--;if(b.t<=0){const n=rage>1?5:3;for(let i=0;i<n;i++)shots.push({kind:'boulder',x:bcx-7,y:b.y+6,w:14,h:14,vx:d/70+(i-(n-1)/2)*1.2,vy:-5.5-Math.random(),g:.25,life:200});sfx('break');b.state='idle';b.t=Math.round(50/rage)}break;
+    case'leapW':b.vx=0;b.t--;if(b.t<=0){b.state='leap';b.vy=-7.5;b.vx=Math.max(-4.5,Math.min(4.5,d/36));sfx('jump')}break;
+    case'leap':if(overlap(b,P))hurtPlayer(1,b);break;
+    case'handsW':b.vx=0;b.t--;if(b.t<=0){[pcx-36,pcx,pcx+36].forEach(x=>zones.push({kind:'pillar',x:x-10,y:floorY-60,w:20,h:60,warn:40,live:0,fy:floorY}));b.state='idle';b.t=Math.round(55/rage)}break;
+    case'callW':b.vx=0;b.t--;if(b.t%10===0)shake=Math.max(shake,2);if(b.t<=0){summonAt('zomb',[[433,97],[455,97]]);b.state='idle';b.t=60}break;
+    case'rec':b.vx=0;b.t--;if(b.t<=0){b.state='idle';b.t=Math.round(30/rage)}break;
+  }
+  b.vy=Math.min(b.vy+G,MAXF);moveX(b,b.vx);b.x=Math.max(L,Math.min(R-b.w,b.x));
+  if(moveY(b,b.vy,false)===1){if(b.state==='leap'){groundWaves(b,floorY,2.6,70);shake=10;sfx('slam');b.state='rec';b.t=50;b.vx=0}b.vy=0}
+  if(b.state!=='leap')pushOut(b);
+}
+// A Febre: flutua; névoa que cai do teto, suor quente em anel, mergulho gelado (fica no chão um tempo) e chama sombras
+function updFever(b){
+  const floorY=84*TS,L=341*TS,R=369*TS;
+  if(b.state==='sleep'){if(P.x<368*TS&&P.y>61*TS&&P.y<floorY){b.state='intro';b.t=70;setDoor19(true);say('A Febre');shake=8;sfx('gaze')}return}
+  const pcx=P.x+P.w/2,bcx=b.x+b.w/2,rage=b.hp<=b.max/2?1.3:1;b.ph+=.016*rage;b.dir=Math.sign(pcx-bcx)||b.dir;
+  if(rage>1&&!b.p2){b.p2=1;say('"Canta, Teo... canta o resto..."');sfx('gaze');shake=8}
+  healDrop(b,342,368,61*TS,'Uma romã caiu da cabeceira! (+1 de vida)');
+  const hover=k=>{const tx=(L+R)/2+Math.sin(b.ph)*170-b.w/2,ty=floorY-100+Math.sin(b.ph*2)*10;b.x+=(tx-b.x)*(k||.04);b.y+=(ty-b.y)*(k||.04)};
+  if(frames%3===0)fxp.push({x:b.x+Math.random()*b.w,y:b.y+Math.random()*b.h,vx:0,vy:.4,life:30,max:30,col:Math.random()<.5?'#c8e0b0':'#e8f0d0',size:1});
+  switch(b.state){
+    case'intro':hover();b.t--;if(b.t<=0){b.state='idle';b.t=40}break;
+    case'idle':hover();b.t--;if(b.t<=0){const seq=['miasma','sweat','chill','split','sweat','chill','miasma','chill'],nx=seq[b.n++%seq.length];b.state=nx+'W';b.t={miasma:30,sweat:28,chill:26,split:36}[nx];sfx(nx==='chill'?'hiss':'charge2')}break;
+    case'miasmaW':hover();b.t--;if(b.t<=0){rainZones(rage>1?8:6,342,368,61*TS+2,floorY);b.state='idle';b.t=Math.round(50/rage)}break;
+    case'sweatW':hover(.02);b.t--;if(b.t<=0){const n=rage>1?14:10;for(let i=0;i<n;i++){const a=i/n*Math.PI*2+b.ph;shots.push({kind:'fire',x:bcx-4,y:b.y+b.h/2,w:8,h:8,vx:Math.cos(a)*1.7,vy:Math.sin(a)*1.7,g:0,life:200})}sfx('fireball');b.state='idle';b.t=Math.round(50/rage)}break;
+    case'chillW':b.t--;b.x+=(Math.random()-.5)*2;if(b.t<=0){const tx=pcx-bcx,ty=(P.y+11)-(b.y+b.h/2),dd=Math.hypot(tx,ty)||1;b.vx=tx/dd*5*rage;b.vy=ty/dd*5*rage;b.state='chill';b.t=50;sfx('dash')}break;
+    case'chill':b.t--;b.x=Math.max(L-8,Math.min(R-b.w+8,b.x+b.vx));b.y+=b.vy;if(overlap(b,P))hurtPlayer(1,b);
+      if(b.y+b.h>=floorY||b.t<=0){b.y=Math.min(b.y,floorY-b.h);b.state='rest';b.t=70;b.vx=b.vy=0;shake=8;sfx('slam')}break;
+    case'rest':b.t--;if(b.t<=0){b.state='idle';b.t=30}break;
+    case'splitW':hover();b.t--;if(b.t<=0){summonAt('shade',[[345,70],[365,70]]);b.state='idle';b.t=60}break;
+  }
+  if(b.state!=='chill')pushOut(b);
+}
+// O Eco de Teo: luta como você. Três cortes, adagas, investida e golpe de queda
+function updEcho(b){
+  const floorY=58*TS,L=424*TS,R=458*TS;
+  if(b.state==='sleep'){if(P.x>425*TS&&P.y>31*TS&&P.y<floorY){b.state='intro';b.t=70;setDoor20(true);say('O Eco de Teo');shake=8;sfx('roar')}return}
+  const pcx=P.x+P.w/2,bcx=b.x+b.w/2,rage=b.hp<=b.max/2?1.3:1,d=pcx-bcx;
+  if(rage>1&&!b.p2){b.p2=1;say('"Fica. Aqui ninguém morre."');sfx('roar');shake=8}
+  healDrop(b,425,457,31*TS,'Uma romã caiu da festa! (+1 de vida)');
+  if(b.state==='idle'||b.state.endsWith('W'))b.dir=Math.sign(d)||b.dir;
+  switch(b.state){
+    case'intro':b.vx=0;b.t--;if(b.t<=0){b.state='idle';b.t=40}break;
+    case'idle':b.vx=Math.abs(d)>70?Math.sign(d)*1.1*rage:Math.abs(d)<34?-Math.sign(d)*.8:0;b.t--;
+      if(b.t<=0){const seq=['combo','knives','dash','plunge','combo','dash','knives','plunge'],nx=seq[b.n++%seq.length];b.vx=0;b.state=nx+'W';b.t={combo:22,knives:22,dash:24,plunge:20}[nx];sfx(nx==='dash'?'charge':'charge2')}break;
+    case'comboW':b.vx=0;b.t--;if(b.t<=0){b.state='combo';b.t=36}break;
+    case'combo':{b.t--;const k=36-b.t;if(k===2||k===14||k===26){b.vx=b.dir*2.6;sfx('swing',1)}
+      const act=(k>=2&&k<8)||(k>=14&&k<20)||(k>=26&&k<32);b.slash=act?{x:b.dir>0?b.x+b.w:b.x-30,y:b.y-4,w:30,h:b.h+6}:null;
+      if(act){if(overlap(b.slash,P))hurtPlayer(1,b.slash);if(k%12===2)slashFx(b.slash.x+15,b.slash.y+12)}b.vx*=.85;
+      if(b.t<=0){b.slash=null;b.state='rec';b.t=40}break}
+    case'knivesW':b.vx=0;b.t--;if(b.t<=0){const n=rage>1?5:3;for(let i=0;i<n;i++)shots.push({kind:'eknife',x:bcx-4,y:b.y+8,w:8,h:3,vx:b.dir*4.6,vy:(i-(n-1)/2)*.55,g:0,life:120});sfx('swing',1);b.state='idle';b.t=Math.round(45/rage)}break;
+    case'dashW':b.vx=0;b.t--;if(b.t<=0){b.state='dash';b.t=24;b.vx=b.dir*6.2*rage;sfx('dash')}break;
+    case'dash':b.t--;if(frames%2)fxp.push({heroGhost:true,k:'kRun',fr:Math.floor(frames/5),face:b.dir,x:bcx,y:b.y+b.h,life:14,max:14});if(overlap(b,P))hurtPlayer(1,b);if(b.t<=0){b.vx=0;b.state='rec';b.t=36}break;
+    case'plungeW':b.vx=0;b.t--;if(b.t<=0){b.state='air';b.vy=-8.5;b.vx=Math.max(-4,Math.min(4,d/40));sfx('jump')}break;
+    case'air':if((b.vy>-1&&Math.abs(d)<16)||b.vy>3){b.state='plunge';b.vx=0;b.vy=9;sfx('swing',3)}break;
+    case'plunge':if(overlap(b,P))hurtPlayer(1,b);break;
+    case'rec':b.vx=0;b.t--;if(b.t<=0){b.state='idle';b.t=Math.round(30/rage)}break;
+  }
+  if(b.state!=='plunge')b.vy=Math.min(b.vy+G,MAXF);
+  if(moveX(b,b.vx)&&b.state==='dash'){b.vx=0;b.state='rec';b.t=40;shake=5}
+  b.x=Math.max(L,Math.min(R-b.w,b.x));
+  if(moveY(b,b.vy,false)===1){if(b.state==='plunge'||b.state==='air'){groundWaves(b,floorY,3,90);shake=10;sfx('slam');b.state='rec';b.t=50;b.vx=0}b.vy=0}
+  if(b.state!=='dash'&&b.state!=='plunge')pushOut(b);
+}
+// A Montanha que Sonha: um olho enorme. Feixe pelo chão (e no alto, na 2a fase), chuva de pedras, anel de brasas, puxa você e chama gárgulas
+function updDreamer(b){
+  const floorY=28*TS,L=341*TS,R=373*TS;
+  if(b.state==='sleep'){if(P.x<372*TS&&P.x>341*TS&&P.y<floorY){b.state='intro';b.t=110;setDoor21(true);say('A Montanha que Sonha');shake=14;sfx('roar')}return}
+  const pcx=P.x+P.w/2,bcx=b.x+b.w/2,ph2=b.hp<=b.max/2,sp=ph2?1.3:1;b.ph+=.012*sp;
+  if(ph2&&!b.p2){b.p2=1;say('"Não me deixa sozinha no escuro."');sfx('roar');shake=14}
+  healDrop(b,342,372,4*TS,'Uma romã caiu do céu do sonho! (+1 de vida)');
+  if(b.state!=='rest'){const tx=(L+R)/2-b.w/2+Math.sin(b.ph)*110,ty=floorY-108+Math.sin(b.ph*1.7)*8;b.x+=(tx-b.x)*.04;b.y+=(ty-b.y)*.04}
+  switch(b.state){
+    case'intro':b.t--;if(b.t%12===0)shake=Math.max(shake,3);if(b.t<=0){b.state='idle';b.t=40}break;
+    case'idle':b.t--;if(b.t<=0){const seq=ph2?['beam','rain','orbs','pull','beam','call','orbs','rain','pull']:['beam','rain','orbs','pull','beam','call'],nx=seq[b.n++%seq.length];b.state=nx+'W';
+      b.t={beam:42,rain:30,orbs:28,pull:30,call:36}[nx];if(nx==='beam'){b.beamY=floorY-10;b.second=0}sfx(nx==='pull'?'hiss':'gaze')}break;
+    case'beamW':b.t--;if(b.t<=0){b.state='beam';b.t=22;sfx('burn');shake=5}break;
+    case'beam':b.t--;{const band={x:L,y:b.beamY-6,w:R-L,h:12};if(overlap(band,P))hurtPlayer(1,band)}
+      if(b.t<=0){if(ph2&&!b.second){b.second=1;b.beamY=floorY-46;b.state='beamW';b.t=26;sfx('gaze')}else{b.state='rest';b.t=70}}break;
+    case'rest':b.t--;b.y+=(floorY-b.h-18-b.y)*.06;if(b.t<=0){b.state='idle';b.t=30}break;
+    case'rainW':b.t--;if(b.t<=0){rainZones(ph2?10:7,342,372,3*TS+2,floorY);b.state='idle';b.t=Math.round(50/sp)}break;
+    case'orbsW':b.t--;if(b.t<=0){const n=ph2?16:12;for(let i=0;i<n;i++){const a=i/n*Math.PI*2+b.ph;shots.push({kind:'fire',x:bcx-4,y:b.y+b.h/2,w:8,h:8,vx:Math.cos(a)*1.5,vy:Math.sin(a)*1.5,g:0,life:220})}sfx('fireball');b.state='idle';b.t=Math.round(50/sp)}break;
+    case'pullW':b.t--;if(b.t<=0){b.state='pull';b.t=80;sfx('dash')}break;
+    case'pull':b.t--;if(P.dashT===0&&state==='play'){P.vx+=Math.sign(bcx-pcx)*.28*sp;if(frames%3===0)fxp.push({x:pcx+(Math.random()-.5)*60,y:P.y+(Math.random()-.5)*40,vx:Math.sign(bcx-pcx)*3,vy:0,life:24,max:24,col:'#b8a8ff',size:1,add:true})}
+      if(b.t%20===0)shots.push({kind:'boulder',x:L+Math.random()*(R-L-14),y:3*TS,w:14,h:14,vx:0,vy:1,g:.2,life:200});if(b.t<=0){b.state='idle';b.t=40}break;
+    case'callW':b.t--;if(b.t<=0){summonAt('garg',[[345,10],[369,10]]);b.state='idle';b.t=60}break;
+  }
+  if(b.state!=='intro'&&overlap(b,P))hurtPlayer(1,b);
+}
+function drawDreamBoss(b){
+  if(!inView(b.x,b.y,160))return;
+  if(b.state==='sleep'&&!seen[Math.floor((b.y+b.h/2)/TS)*W+Math.floor((b.x+b.w/2)/TS)])return;
+  const x=b.x+b.w/2,y=b.y+b.h,v=bossVariant(b),jit=jitW(b);
+  if(b.kind==='digger'){shadow(x,y,14);
+    const fr=b.state.endsWith('W')?1:Math.abs(b.vx)>.1?Math.floor(frames/10)%2:0;sprA('gDamiao',fr,x+jit,y,b.dir,v||'violet',0,1.4);
+    if(!OVR){const sx=Math.round(x+b.dir*13),up=b.state==='digW'||b.state==='leapW'||b.state==='leap',sy=Math.round(b.y+(up?-6:14));
+      ctx.fillStyle='#6a4a2a';ctx.fillRect(sx,sy,2,24);ctx.fillStyle='#a8a8b8';ctx.fillRect(sx-3,up?sy-6:sy+22,8,7)}
+    if(b.state==='rec')stars(b)}
+  else if(b.kind==='fever'){if(!OVR)ctx.globalAlpha=.85;sprA('gWraith',Math.floor(frames/8),x+jit,b.y+b.h/2+8,b.dir,v||'pale',0,2);ctx.globalAlpha=1;if(b.state==='rest')stars(b)}
+  else if(b.kind==='echo'){
+    let k='kIdle',fr=Math.floor(frames/8);
+    if(b.state==='combo'){k='kAtk';fr=Math.floor((36-b.t)/3)}else if(b.state==='air'||b.state==='plunge'){k='kJump';fr=b.vy<0?0:2}else if(b.state==='dash'||Math.abs(b.vx)>.3){k='kRun';fr=Math.floor(frames/5)}
+    if(!OVR&&b.p2){ctx.globalAlpha=.35;sprA(k,fr,x-b.dir*6,y,b.dir,'trail',0,1.1);ctx.globalAlpha=1}
+    sprA(k,fr,x+jit,y,b.dir,v||'violet',0,1.1);if(b.state==='rec')stars(b)}
+  else if(b.kind==='dreamer'){
+    const cx=b.x+b.w/2,cy=b.y+b.h/2,r=b.w/2;
+    if(OVR){ctx.fillStyle=OVR;ctx.beginPath();ctx.arc(cx,cy,r+1,0,7);ctx.fill();return}
+    ctx.save();ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(cx,cy,r*.5,cx,cy,r*2);g.addColorStop(0,'rgba(140,100,255,.35)');g.addColorStop(1,'rgba(80,40,160,0)');ctx.fillStyle=g;ctx.fillRect(cx-r*2,cy-r*2,r*4,r*4);ctx.restore();
+    ctx.fillStyle='#2a1a40';ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();
+    ctx.strokeStyle='#5a3a7a';ctx.lineWidth=1;for(let i=0;i<10;i++){const a=i/10*Math.PI*2+Math.sin(frames*.02+i)*.1;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r*.55,cy+Math.sin(a)*r*.55);ctx.lineTo(cx+Math.cos(a+.2)*r*.8,cy+Math.sin(a+.2)*r*.8);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.stroke()}
+    const open=b.state==='intro'?Math.min(1,(110-b.t)/60):b.state==='rest'?.35:1;
+    ctx.fillStyle=v==='white'?'#ffffff':'#e8e0f0';ctx.beginPath();ctx.ellipse(cx,cy,r*.78,Math.max(1,r*.48*open),0,0,7);ctx.fill();
+    if(open>.2){const dx=P.x+5-cx,dy=P.y+11-cy,dd=Math.hypot(dx,dy)||1,ix=cx+dx/dd*r*.28,iy=cy+dy/dd*r*.14*open;
+      ctx.fillStyle=v==='crimson'||b.p2?'#c8322a':'#7a4ad0';ctx.beginPath();ctx.arc(ix,iy,r*.3*Math.min(1,open+.3),0,7);ctx.fill();
+      ctx.fillStyle='#0a0612';ctx.beginPath();ctx.arc(ix,iy,r*.13,0,7);ctx.fill();ctx.fillStyle='#ffffff';ctx.fillRect(Math.round(ix-r*.12),Math.round(iy-r*.14),3,3)}
+    if(b.state==='beamW'||b.state==='beam'){const on=b.state==='beam';ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=on?'rgba(180,140,255,.65)':((frames>>2)%2?'rgba(180,140,255,.35)':'rgba(180,140,255,.12)');ctx.fillRect(341*TS,b.beamY-(on?6:1),32*TS,on?12:2);ctx.restore()}
+    if(b.state==='rest')stars(b)}
+}
+/* ---------- quem o Teo era: as lembranças e as memórias do sonho ---------- */
+const DREAM_INTRO=['Kalas caiu, e com ele a voz que guardava a porta. Na parede do trono, a rocha se abre como uma pálpebra.',
+  'Do outro lado não há cinza. Há uma casa que Teo conhece, uma rua que ele já varreu, um cemitério com cheiro de terra molhada.',
+  'É o sonho da montanha. Tudo o que ela comeu está guardado aqui: os mortos da cidade, a noite repetida e tudo o que Teo esquece toda manhã.',
+  'Inclusive o nome dele.'];
+const DREAM_MEMS=[
+  ['Memória · O primeiro coveiro',['Dimas ensinou Teo a cavar devagar, para a terra não reclamar, e a nunca contar as covas: "Quem conta começa a esperar a próxima."',
+    'Quando o velho morreu, num verão sem chuva, Teo cavou sozinho e disse o nome dele em voz alta. Depois pendurou a pá de Dimas na parede e nunca mais tirou de lá.',
+    'No sonho, Dimas cavava sem parar, uma cova atrás da outra, sem nome em nenhuma. Agora ele larga a pá e sorri. "Agora sim. Diz o meu nome, menino." Teo diz.']],
+  ['Memória · Três noites',['A montanha guardou as três noites inteiras: o cheiro de vinagre, a vela torta, a mão quente da mãe apertando a dele cada vez mais fraco.',
+    'Na última noite, Eurídice pediu: "Canta o resto, Teo." Ele não sabia o resto. Cantou o primeiro verso onze vezes.',
+    'A febre se desfaz em vapor. No lugar dela fica uma voz baixa cantando o segundo verso. Teo nunca tinha ouvido o segundo verso.']],
+  ['Memória · O que fica',['O Eco tinha o rosto de Teo e a mesma letra dos bilhetes. Era a parte dele que, toda noite, preferia esquecer.',
+    '"Lá fora você está morto", disse o Eco. "Aqui sua mãe canta, o velho cava e o seu pai ainda vai sorrir. Fica."',
+    'Teo pensa em Mira, que já escreveu o nome dele no livro. "Eu já fiquei tempo demais." O Eco abaixa a espada e vira cinza na mão dele.']],
+];
+const DREAM_END=['No alto do sonho, a montanha abre um olho do tamanho da cidade. Ela não tem raiva. Tem fome, e tem medo de acordar sozinha.',
+  'Teo faz o que Dimas ensinou. Fala em voz alta, para a terra saber quem está recebendo: "Teo. Filho de Eurídice, a cantora, e de Andros, o capitão. Coveiro de Olimpo."',
+  'A montanha repete o nome devagar, como quem aprende a falar. Depois fecha o olho.',
+  'Teo acorda no cemitério velho. Não cai cinza. Ao lado da cova da mãe, alguém deixou uma pá e uma romã.',
+  'Ele cava a própria cova sem pressa e diz o nome mais uma vez. Lá longe, Mira vem correndo com o livro, e desta vez ela vem cantando. São onze versos.'];
+const LEMS={
+  lem1:{t:'A canção',x:387,y:89,txt:'Eurídice cantava no templo da Colheita e em casa, descascando romãs. A canção da colheita tinha onze versos, e Teo só sabia o primeiro. "Os outros dez eu te ensino quando você crescer", ela dizia.'},
+  lem2:{t:'O inverno longo',x:404,y:88,txt:'Teo tinha nove anos quando a febre chegou. O pai estava longe, escoltando a caravana do templo até a costa. Por três noites, Teo trocou os panos frios da testa da mãe e cantou o único verso que sabia.'},
+  lem3:{t:'Ninguém veio',x:412,y:79,txt:'Quando ela parou de respirar, Teo bateu em todas as portas da rua. Ninguém abriu: a febre dava mais medo que a morte. Só o velho Dimas apareceu, com a pá no ombro e um pão no bolso.'},
+  lem4:{t:'O nome em voz alta',x:448,y:73,txt:'"Quem enterra diz o nome em voz alta", ensinou Dimas, "para a terra saber quem está recebendo." Teo disse "Eurídice" tão baixo que o velho mandou repetir. Repetiu até a voz quebrar.'},
+  lem5:{t:'A volta do capitão',x:401,y:41,txt:'Andros voltou duas semanas depois, com a armadura suja da estrada, e ficou parado na frente da cova sem dizer nada. Na mesa dele, a ordem da caravana tinha a assinatura de um sacerdote de manto vermelho.'},
+  lem6:{t:'A pá e a espada',x:393,y:20,txt:'Aos quinze anos, Teo recusou a espada da guarda. "Alguém tem que ficar com os mortos, já que os vivos vão embora." Os dois passaram anos falando só o necessário. Até a noite da festa, quando o pai sorriu para ele na multidão.'},
+};
+ITEM_SPAWNS.push(...Object.entries(LEMS).map(([id,l])=>({id,x:l.x,y:l.y})));
+const lemCount=()=>Object.keys(LEMS).filter(k=>save.taken.includes(k)).length;
+function readLem(id){
+  const L=LEMS[id],n=lemCount();
+  scene('Lembrança de Teo · '+L.t,[L.txt],()=>{persist();say('Lembranças de Teo: '+n+' de 6');
+    if(n===6&&!save.flags.lemAll){save.flags.lemAll=1;save.maxHp++;P.hp=maxHp();updateAbil();persist();
+      showMsg({n:'Tudo o que ele esqueceu',d:'Teo lembrou da mãe, do velho Dimas e do pai. Vida máxima +1.'})}});
+}
+Object.assign(CHARMS,{febre:{n:'Febre Contida',c:2,d:'Com 1 de vida, seu dano dobra.'}});
+// quem mora no sonho
+NPCS.push(
+  {id:'teokid',name:'Teo, aos nove anos',x:356,y:97,kid:true,ghost:true,st:()=>save.boss20Dead?3:save.boss19Dead?2:save.boss18Dead?1:0},
+  {id:'euridice',name:'Eurídice, a cantora',x:352,y:57,ghost:true,st:()=>save.boss20Dead?1:0},
+);
+Object.assign(NPC_SPR,{teokid:'gLino',euridice:'npcWoman'});
+Object.assign(NPC_VAR,{teokid:'pale',euridice:'violet'});
+if(PORT_IMG.teo)PORT_IMG.teokid=PORT_IMG.teo;
+Object.assign(BARKS,{teokid:[['Você é grande!','Papai já volta?','Psiu...']],euridice:[['Lá, lá...','Teo?','Canta comigo.']]});
+Object.assign(LINES,{
+  teokid:[
+    ['Você também é o Teo? Você é grande.','A mamãe está com febre. Eu vou ficar acordado até o papai voltar.','Tem um homem de pá no cemitério. Ele cava a noite toda e nunca escreve nome nenhum.'],
+    ['O homem da pá foi embora sorrindo. Disse que você lembrou o nome dele.','Lá em cima tem uma febre que não deixa ninguém dormir. Cuidado.'],
+    ['Eu ouvi o segundo verso! Você também ouviu?','Tem outro de você lá em cima. Ele escreve bilhetes e depois rasga.'],
+    ['Eu acho que sou só uma lembrança sua.','Tá tudo bem. Lembrança também serve.','Quando você chegar lá no alto, diz o nosso nome bem alto.']],
+  euridice:[
+    ['Teo? Como você cresceu.','Eu não sou ela de verdade. Sou o que a montanha guardou dela: a voz e o último pedido.','Termina a canção por mim. Os outros versos estão espalhados no que você esqueceu.'],
+    ['Falta pouco. A montanha tem medo de acordar sozinha.','Não tenha raiva dela. Ninguém ensinou o nome dela para ela.']],
+});
+
 /* ---------- gente do submundo ---------- */
 NPCS.push(
   {id:'cassia',name:'Cássia, a caçadora',x:8,y:77,st:()=>save.boss12Dead?(save.flags.cassiaR?2:1):0},
@@ -4419,6 +4745,7 @@ LINES.tiresias[1].push('Tem mais alguém que conta as noites comigo, sabia? Um h
 LINES.odete[0].push('Mais uma coisa: o chão perto da minha ilhota, aqui embaixo, está rachado. Por baixo dele ainda há raízes, e alguém que caça.');
 LINES.mira[3].splice(LINES.mira[3].length-1,0,'A irmã Odete, do pântano, diz que debaixo da ilhota dela tem raízes e uma caçadora viva. E um manto vermelho que ninguém vê de perto.');
 LINES.odete[1].push('O chão rachado perto da ilhota ainda leva às raízes. Lá embaixo, o culto escondia a casa dele.');
+LINES.caio[1].push('Depois que o Kalas caiu, a parede do trono começou a respirar. Tem uma fenda lá. Eu não tenho coragem de entrar.');
 Object.assign(CHARMS,{
   aljava:{n:'Aljava Encantada',c:1,d:'Recupera 1 flecha a cada 4 segundos.'},
   olho:{n:'Olho da Caçadora',c:1,d:'A flecha carregada fica pronta na metade do tempo.'},
