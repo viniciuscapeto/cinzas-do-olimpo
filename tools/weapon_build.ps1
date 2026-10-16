@@ -1,4 +1,4 @@
-﻿param([string]$Dir="$env:USERPROFILE\Documents\Cinzas do Olimpo\sprite-gemini\armas",[string]$Src="$PSScriptRoot\..\src\cinzas.html")
+﻿param([string]$Dir="$PSScriptRoot\..\sprite-gemini\armas",[string]$Src="$PSScriptRoot\..\src\cinzas.html")
 # armas desenhadas no Gemini -> sprites w_<arma> do jogo
 # cada arquivo: uma arma só, fundo magenta. Arma de perto deitada com a ponta para a DIREITA e o cabo à esquerda
 # (se vier em pé com a ponta para cima, o script gira). Arco em pé, barriga para a direita, sem corda.

@@ -4,7 +4,7 @@ O herói agora segura na mão a arma que está equipada. Enquanto não houver im
 
 ## Onde salvar
 
-Pasta: `Documents\Cinzas do Olimpo\sprite-gemini\armas`
+Pasta: `sprite-gemini/armas` no repositório (dá para subir pelo site do GitHub). Também serve a cópia local em `Documents\Cinzas do Olimpo\sprite-gemini\armas`, rodando o script com `-Dir`.
 
 Salve **uma arma por imagem**, com estes nomes (PNG ou JPG):
 
