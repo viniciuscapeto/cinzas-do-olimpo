@@ -93,7 +93,7 @@
   save.tech.wave=true;d.hp=50;P.x=d.x-80;P.face=1;P.fury=.5;run(2);tapped.power=true;keys.power=true;run(1);keys.power=false;
   ok(pshots.length===1&&Math.abs(P.fury-(.5-1/3))<.01,'Onda de Brasa sai e gasta 1/3 da barra');
   run(40);ok(d.hp===48,'onda acerta o inimigo ('+d.hp+')');
-  P.fury=.2;tapped.power=true;run(2);ok(pshots.length===0,'sem 1/3 da barra a onda não sai');
+  pshots=[];P.fury=.2;tapped.power=true;run(2);ok(pshots.length===0,'sem 1/3 da barra a onda não sai');
 
   // ---------- missão do Lino ----------
   fresh();save.bossDead=true;reset();state='play';ents.forEach(e=>e.dead=true);

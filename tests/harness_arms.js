@@ -39,12 +39,38 @@
  const c5=CHESTS.find(c=>c.id==='co5');ok(c5&&c5.r.charm==='dente'&&CHARMS.dente,'baú com o Dente do Glutão no alto do Covil');
  ok(['47,77','44,84','41,78','38,85'].every(s=>{const [y,x]=s.split(',').map(Number);return grid[y][x]==='='})&&grid[c5.y+1][c5.x]==='=','plataformas sobem até o baú do Covil');
  // ---- arma na mão ----
- fresh();ok(heldWeapon()==='sword','começa com a espada na mão');
+ fresh();ok(heldWeapon()==='spade'&&WEAPONS.spade.atk[1].dmg<ATK[1].dmg,'começa com a pá do coveiro na mão (mais fraca que a espada)');
  giveWeapon('spear');close();ok(heldWeapon()==='spear','pegar a lança coloca a lança na mão na hora');
  giveWeapon('hammer');close();ok(heldWeapon()==='hammer','pegar o martelo coloca o martelo na mão');
- save.weapons=['sword','spear','scythe','hammer','shovel'];save.weapon='sword';
- const order=[];for(let i=0;i<5;i++){tap('swap');run(2);order.push(heldWeapon())}
+ save.weapons=['sword','spear','scythe','hammer','shovel'];save.weapon='sword';P.swapT=0;
+ const order=[];for(let i=0;i<5;i++){tap('swap');run(SWAP_T+2);order.push(heldWeapon())}
  ok(order.join(',')==='spear,scythe,hammer,shovel,sword','trocar com T passa por todas e a arma na mão acompanha: '+order.join(','));
+ // troca animada: braço vai às costas com a arma antiga e volta com a nova
+ save.weapon='sword';P.atk=null;tap('swap');const seenK=new Set(),seenHeld=new Set();for(let i=0;i<SWAP_T;i++){const p=heroPose();seenK.add(p.k+p.fr);seenHeld.add(P.swapT>0&&SWAP_T-P.swapT<7?P.swapFrom:heldWeapon());run(1)}
+ ok(seenK.has('kAtk0')&&seenK.has('kAtk1')&&seenK.has('kAtk3'),'trocar de arma anima o braço (vai às costas e puxa a nova): '+[...seenK].join(','));
+ ok(seenHeld.has('sword')&&seenHeld.has('spear'),'na troca aparece a arma antiga e depois a nova');
+ tap('swap');run(3);tap('attack');ok(P.swapT===0&&P.atk,'atacar no meio da troca cancela a animação');run(30);
+ // efeitos de cada arma
+ {let err=null;const before=fxp.length;try{for(const w of ['sword','spear','scythe','hammer','shovel']){weaponFx(w,100,100,90,100);weaponFx(w,100,100,90,100,true)}}catch(x){err=x}
+  ok(!err&&fxp.some(p=>p.bolt&&p.col===WEAPON_FX.spear.c)&&fxp.some(p=>p.bolt&&p.col===WEAPON_FX.scythe.c)&&fxp.length>before+20,'cada arma solta o seu efeito (raio azul, raio violeta, fogo, brasa, ouro)'+(err?': '+err.message:''));
+  let e2=null;try{drawParticles(true);drawParticles(false)}catch(x){e2=x}ok(!e2,'raios desenham sem erro')}
+ ok(Object.keys(WEAPONS).every(w=>WEAPON_LORE[w]&&WEAPON_LORE[w].length>80)&&WEAPON_LORE.bow,'cada arma tem a sua história');
+ ok(['w_sword','w_spear','w_scythe','w_hammer','w_shovel','w_bow'].every(k=>SPRITE_DATA[k]),'as 6 armas do Gemini estão no jogo'); // braço em sincronia com a arma: o quadro do ataque segue a direção da arma
+ {save.weapon='sword';P.swapT=0;P.atk=null;startAtk(1);const seq=[];let okSync=true;for(let i=0;i<14;i++){const a=blades()[0].ang,p=heroPose();seq.push(p.fr);const exp=a<-1.5?0:a<-.45?1:a<.62?2:3;if(p.fr!==exp)okSync=false;P.atk.t++}
+  ok(okSync&&new Set(seq).size>=2,'no ataque o braço acompanha a direção da arma: '+seq.join(''));P.atk=null}
+ // escudo da bênção
+ {P.ward=1;P.inv=0;P.dashT=0;state='play';const hp=P.hp,e=mkEnemy({t:'hop',x:Math.floor(P.x/16)+1,y:Math.floor((P.y+P.h)/16)-1});ents.push(e);e.x=P.x+14;const n0=fxp.length;
+  let err=null;try{drawWard()}catch(x){err=x}ok(!err,'escudo azul desenha em volta do Teo'+(err?': '+err.message:''));
+  hurtPlayer(1,e);ok(P.ward===0&&P.hp===hp,'a bênção segura o golpe inteiro');
+  ok(fxp.some(p=>p.bolt)&&fxp.some(p=>p.wave&&p.col==='#9ad8ff')&&fxp.length>n0+25,'o escudo explode em cacos, raios e onda azul');
+  ok(e.kb>0&&e.kbv>0,'a explosão empurra o inimigo que estava perto');
+  try{drawWard()}catch(x){err=x}ok(!err&&P.wardFx>0,'clarão da explosão desenha sem erro');e.dead=true;P.inv=0;hitstop=0;shake=0} ok(Math.cos(WEAPON_GEOM.scythe.rest)>.5&&Math.cos(WEAPON_GEOM.hammer.rest)>.5,'foice e martelo descansam com a parte grande para fora, não sobre o Teo');
+ {const n0=fxp.filter(p=>p.bolt).length;let err=null;try{for(let i=0;i<30;i++)spearSpark(100,100,-.5,WEAPON_GEOM.spear)}catch(x){err=x}ok(!err&&fxp.filter(p=>p.bolt).length>n0,'a ponta da lança estala raios')}
+ ok(fxp.some(p=>p.shard),'o escudo estoura em cacos de vidro'); // efeito constante de cada arma e a flecha do Gemini
+ {let err=null;const n0=fxp.length;try{state='play';for(const w of ['sword','spear','scythe','hammer','shovel'])for(let i=0;i<30;i++)weaponAura(w,100,100,-.4,WEAPON_GEOM[w]);
+   if(SPR.w_arrow)drawArrowImg({x:100,y:100,vx:6,vy:-.4,pierce:true,fire:true});P.bowShow=30;drawBow();P.aim=30;drawBow();P.aim=0;bowRunes(100,100)}catch(x){err=x}
+  ok(!err&&fxp.length>n0+30,'cada arma tem efeito constante (brasa, raio, chama, roxo, ouro) e o arco tem runas'+(err?': '+err.message:''));
+  ok(SPRITE_DATA.w_arrow&&WEAPON_GEOM.scythe.flip&&WEAPON_GEOM.arrow,'flecha do Gemini no jogo e foice virada (lâmina grande para a frente)')} save.weapon='sword';P.swapT=0;P.atk=null;
  // arco: aparece na mão ao ganhar, ao mirar e logo depois de atirar; atacar volta para a arma
  save.ab.bow=true;save.arrowsMax=10;P.arrows=10;P.bowShow=150;ok(heldWeapon()==='bow','ao ganhar o arco ele vai para a mão');
  tap('attack');ok(heldWeapon()==='sword'&&P.bowShow===0,'atacar de perto guarda o arco e volta a espada');run(30);

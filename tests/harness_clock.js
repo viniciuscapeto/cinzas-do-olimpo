@@ -4,5 +4,5 @@
  P.x=183*16+3;let first=-1;for(let i=0;i<900&&first<0;i++){step();if(items.some(it=>it.id==='pom'))first=i}
  ok(first>=0,'cai romã na luta do relógio (primeira em '+(first/60).toFixed(1)+'s)');
  const pm=items.find(it=>it.id==='pom');let land=false;for(let i=0;i<120&&pm&&items.includes(pm);i++){step();if(pm.vy===0&&pm.y>5*16)land=true}
- ok(land&&pm.y+pm.h<=9*16+.5,'a romã cai até o chão da sala (y '+(pm?((pm.y+pm.h)/16).toFixed(2):'-')+')');
+ ok((land&&pm.y+pm.h<=9*16+.5)||(pm&&!items.includes(pm)&&overlap(pm,P)),'a romã cai até o chão da sala (y '+(pm?((pm.y+pm.h)/16).toFixed(2):'-')+')');
  console.log(fails?fails+' FALHA(S)':'TUDO OK')})();

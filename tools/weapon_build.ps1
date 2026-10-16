@@ -1,12 +1,12 @@
-﻿param([string]$Dir="$PSScriptRoot\..\sprite-gemini\armas",[string]$Src="$PSScriptRoot\..\src\cinzas.html")
+﻿param([string]$Dir="$PSScriptRoot\..\sprite-gemini\armas",[string]$Src="$PSScriptRoot\..\src\cinzas.html",[int]$Detail=2)
 # armas desenhadas no Gemini -> sprites w_<arma> do jogo
 # cada arquivo: uma arma só, fundo magenta. Arma de perto deitada com a ponta para a DIREITA e o cabo à esquerda
 # (se vier em pé com a ponta para cima, o script gira). Arco em pé, barriga para a direita, sem corda.
 Add-Type -AssemblyName System.Drawing
-if(-not ('WeaponBuild' -as [type])){
+if(-not ('WeaponBuild2' -as [type])){
 Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
 using System;using System.Drawing;using System.Drawing.Drawing2D;using System.Drawing.Imaging;using System.Runtime.InteropServices;
-public static class WeaponBuild{
+public static class WeaponBuild2{
   static bool IsBg(int r,int g,int b){return r>g+45 && b>g+45 && Math.Abs(r-b)<110 && (r+b)>170;}
   // tira o fundo magenta, limpa pontos soltos e recorta no que sobrou
   public static Bitmap Key(string path){
@@ -20,6 +20,23 @@ public static class WeaponBuild{
     int x0=W,y0=H,x1=-1,y1=-1;for(int y=0;y<H;y++)for(int x=0;x<W;x++)if(px[(y*W+x)*4+3]>0){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
     if(x1<0)throw new Exception("imagem vazia depois de tirar o fundo: "+path);
     var outb=src.Clone(new Rectangle(x0,y0,x1-x0+1,y1-y0+1),PixelFormat.Format32bppArgb);src.Dispose();return outb;
+  }
+  // afina a ponta: da fração `start` da largura em diante, achata na vertical (squeeze) e afunila até a ponta, depois refaz o contorno escuro
+  public static Bitmap Sharpen(Bitmap s,double start,double squeeze){
+    int W=s.Width,H=s.Height,hs=(int)(W*start);var d=new Bitmap(W,H,PixelFormat.Format32bppArgb);
+    double sy=0;int n=0;for(int x=0;x<(int)(W*0.3);x++)for(int y=0;y<H;y++)if(s.GetPixel(x,y).A>0){sy+=y;n++;}
+    double cy=n>0?sy/n:H/2.0,maxH=0;
+    for(int x=hs;x<W;x++)for(int y=0;y<H;y++)if(s.GetPixel(x,y).A>0)maxH=Math.Max(maxH,Math.Abs(y-cy));
+    for(int x=0;x<W;x++)for(int y=0;y<H;y++){var c=s.GetPixel(x,y);if(c.A==0)continue;
+      if(x<hs){d.SetPixel(x,y,c);continue;}
+      double u=(x-hs)/(double)(W-hs),ny=cy+(y-cy)*squeeze,lim=maxH*squeeze*(1-u)+1.5;
+      if(Math.Abs(ny-cy)<=lim){int yy=(int)Math.Round(ny);if(yy>=0&&yy<H)d.SetPixel(x,yy,c);}}
+    var o=new Bitmap(d);var dark=Color.FromArgb(255,24,20,30);
+    for(int x=hs;x<W;x++)for(int y=1;y<H-1;y++){if(d.GetPixel(x,y).A>0)continue;
+      for(int k=0;k<4;k++){int nx=x+(k==0?1:k==1?-1:0),ny2=y+(k==2?1:k==3?-1:0);if(nx>=0&&nx<W&&d.GetPixel(nx,ny2).A>0){for(int r=-1;r<=1;r++)if(x+r>=0&&x+r<W&&o.GetPixel(x+r,y).A==0&&r==0)o.SetPixel(x,y,dark);break;}}}
+    d.Dispose();
+    int x0=W,y0=H,x1=-1,y1=-1;for(int y=0;y<H;y++)for(int x=0;x<W;x++)if(o.GetPixel(x,y).A>0){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+    var r2=o.Clone(new Rectangle(x0,y0,x1-x0+1,y1-y0+1),PixelFormat.Format32bppArgb);o.Dispose();s.Dispose();return r2;
   }
   // reduz com média e deixa o alfa duro (cara de pixel art)
   public static Bitmap Shrink(Bitmap src,int w,int h){
@@ -35,15 +52,16 @@ public static class WeaponBuild{
 '@
 }
 # nome do arquivo -> id no jogo e tamanho na tela (comprimento igual ao WEAPON_GEOM.len do jogo; o arco usa a altura)
-$defs=[ordered]@{espada=@('sword',24);lanca=@('spear',38);foice=@('scythe',30);martelo=@('hammer',22);pa=@('shovel',26);arco=@('bow',22)}
+$defs=[ordered]@{espada=@('sword',26);lanca=@('spear',38);foice=@('scythe',32);martelo=@('hammer',26);pa=@('shovel',28);arco=@('bow',24);flecha=@('arrow',16)}
 $datas=@();$cells=@();$prev=@()
 foreach($k in $defs.Keys){
-  $f=Get-ChildItem $Dir -File -ErrorAction SilentlyContinue | Where-Object { $_.BaseName -ieq $k -and $_.Extension -match '^\.(png|jpe?g|webp)$' } | Select-Object -First 1
+  $f=Get-ChildItem $Dir -File -ErrorAction SilentlyContinue | Where-Object { $_.BaseName -ieq $k -and $_.Extension -match '^\.(png|jpe?g|jfif|webp)$' } | Select-Object -First 1
   if(-not $f){"{0,-8} (sem arquivo, o jogo continua desenhando essa arma)" -f $k;continue}
-  $id,$len=$defs[$k];$b=[WeaponBuild]::Key($f.FullName)
+  $id,$len=$defs[$k];$b=[WeaponBuild2]::Key($f.FullName)
   if($id -eq 'bow'){ if($b.Width -gt $b.Height*1.2){$b.RotateFlip('Rotate270FlipNone')}; $h=$len;$w=[Math]::Max(1,[int][Math]::Round($b.Width*$len/$b.Height)) }
-  else{ if($b.Height -gt $b.Width*1.3){$b.RotateFlip('Rotate90FlipNone')}; $w=$len;$h=[Math]::Max(1,[int][Math]::Round($b.Height*$len/$b.Width)) }
-  $sm=[WeaponBuild]::Shrink($b,$w,$h)
+  else{ if($b.Height -gt $b.Width*1.3){$b.RotateFlip('Rotate90FlipNone')}; if($id -eq 'spear'){$b=[WeaponBuild2]::Sharpen($b,0.6,0.5)}; $w=$len;$h=[Math]::Max(1,[int][Math]::Round($b.Height*$len/$b.Width)) }
+  # guarda com $Detail vezes mais pixels: o jogo desenha no mesmo tamanho, com mais detalhe na tela nítida
+  $sm=[WeaponBuild2]::Shrink($b,$w*$Detail,$h*$Detail)
   $ms=New-Object IO.MemoryStream;$sm.Save($ms,[Drawing.Imaging.ImageFormat]::Png);$b64=[Convert]::ToBase64String($ms.ToArray())
   $sm.Save((Join-Path $Dir "pronto_$k.png"),[Drawing.Imaging.ImageFormat]::Png);$prev+=,@($k,$sm)
   $datas+="  w_${id}:'data:image/png;base64,$b64'";$cells+="w_${id}:[$w,$h]"

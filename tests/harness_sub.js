@@ -58,7 +58,7 @@
   const e=mkEnemy({t:'hop',x:40,y:21});ents.push(e);e.hp=20;e.atk='rec';e.at=9999;place(30,22);P.face=1;
   keys.shoot=true;run(1);keys.shoot=false;run(40);ok(P.arrows===9&&e.hp<20,'toque rápido atira uma flecha que acerta ('+e.hp+')');
   const h1=e.hp;keys.shoot=true;run(40);keys.shoot=false;run(40);ok(e.hp<=h1-2,'flecha carregada dá mais dano ('+h1+'→'+e.hp+')');
-  P.arrows=0;keys.shoot=true;run(1);keys.shoot=false;run(5);ok(!pshots.some(s=>s.kind==='arrow'),'sem flechas não atira');
+  pshots=[];P.arrows=0;keys.shoot=true;run(1);keys.shoot=false;run(5);ok(!pshots.some(s=>s.kind==='arrow'),'sem flechas não atira');
   // alvo de bronze no templo da colheita
   fresh(()=>{save.ab.bow=true;save.arrowsMax=10});ok(tile(77,13)==='G','portão de bronze fechado');P.arrows=10;place(70,16);P.face=1;keys.shoot=true;run(1);keys.shoot=false;run(40);
   ok(tile(77,13)==='.'&&save.flags.tg_a2,'flecha no olho de bronze abre o portão');

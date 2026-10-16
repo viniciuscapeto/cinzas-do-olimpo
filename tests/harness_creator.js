@@ -9,7 +9,7 @@
  // o save
  loadCreatorSave();
  ok(state==='play'&&save.flags.creator,'carrega o save do criador e entra no jogo');
- ok(save.maxHp===12&&P.hp===maxHp(),'vida sem as recompensas de chefe ('+save.maxHp+' + nível = '+maxHp()+')');
+ ok(save.maxHp===5+ITEM_SPAWNS.filter(i=>/^hp\d?$/.test(i.id)).length+4&&P.hp===maxHp(),'vida sem as recompensas de chefe ('+save.maxHp+' + nível = '+maxHp()+')');
  ok(ecoCount()===ECOS.length,'os '+ECOS.length+' ecos');
  ok(['sword','spear','scythe','hammer','shovel'].every(w=>save.weapons.includes(w))&&save.ab.knives&&save.ab.bow&&save.ab.fire,'todas as armas, adagas e arco de fogo');
  ok(['jump','dash','wall','glide','beast','echo'].every(k=>save.ab[k]),'todas as habilidades de movimento');

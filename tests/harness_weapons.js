@@ -1,8 +1,8 @@
-﻿;(function(){readEco=function(){};let fails=0;const run=n=>{for(let i=0;i<n;i++){step();render()}};const ok=(c,m)=>{if(!c)fails++;console.log((c?'OK   ':'FALHA ')+m)};
+;(function(){readEco=function(){};let fails=0;const run=n=>{for(let i=0;i<n;i++){step();render()}};const ok=(c,m)=>{if(!c)fails++;console.log((c?'OK   ':'FALHA ')+m)};
  const close=()=>{let g=0;while(state==='scene'&&g++<40)sceneStep(false);if(state==='msg'){state='play';scr.hidden=true}};
  const fresh=f=>{newGame();state='play';scr.hidden=true;save.ab.jump=save.ab.dash=save.ab.wall=true;if(f)f();reset();state='play';ents.forEach(e=>e.dead=true);P.inv=0};
  const reachOf=w=>{save.weapon=w;let m=0;P.atk={n:1,t:0,hit:new Set()};for(let t=1;t<=curATK()[1].dur;t++){P.atk.t=t;for(const b of blades())m=Math.max(m,Math.abs(b.x-(P.x+P.w/2)))}P.atk=null;return m};
- fresh();ok(save.weapon==='sword'&&save.weapons.length===1,'começa só com a espada');
+ fresh();ok(save.weapon==='spade'&&save.weapons.length===1,'começa só com a pá do coveiro');
  const rs=reachOf('sword'),rl=reachOf('spear');save.weapon='sword';ok(rl>rs*1.3,'lança alcança bem mais longe ('+Math.round(rs)+' → '+Math.round(rl)+' px)');
  // foice no cemitério
  fresh(()=>{save.boss2Dead=true});const it=items.find(i=>i.id==='w_scythe');ok(!!it,'foice está no cemitério');P.x=it.x-2;P.y=it.y-4;P.vy=0;run(2);close();ok(save.weapons.includes('scythe')&&save.weapon==='scythe','pegar a foice equipa a arma nova');

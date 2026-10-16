@@ -23,6 +23,7 @@
   save.ab.jump=save.ab.dash=save.ab.wall=true;
   B1.state='idle';B1.hp=0;hitBoss(0);boss=B1;for(let i=0;i<130&&state==='play';i++)step();
   ok(state==='scene'&&SC&&SC.title.includes('festa'),'vencer o Corcel de Bronze mostra a lembrança da festa');finishScene();
+  ok(state==='msg'&&save.weapons.includes('sword')&&save.weapon==='sword','depois do Corcel a espada do capitão sai da cinza da praça');state='play';scr.hidden=true;
   ok(grid[12][109]==='.','passagem a leste aberta');
   // Ilía morre -> selo
   place(167,14);boss=B2;B2.state='idle';B2.hp=0;hitBoss(0);for(let i=0;i<130&&state==='play';i++)step();
@@ -96,7 +97,7 @@
   const run=(n)=>{for(let i=0;i<n;i++){step();render()}};
   const ok=(c,m)=>console.log((c?'OK   ':'FALHA ')+m);
   newGame();state='play';ents.forEach(e=>e.dead=true);
-  const e=ents.find(x=>x.t==='hop');e.dead=false;e.hp=99;P.inv=99999;
+  save.weapons.push('sword');save.weapon='sword';const e=ents.find(x=>x.t==='hop');e.dead=false;e.hp=99;P.inv=99999;
   P.x=e.x-24;P.y=e.y+e.h-22;P.face=1;run(2);
   let i=0;while(P.fury<1&&i++<60){keys.attack=true;run(1);keys.attack=false;run(9);P.x=e.x-24;P.face=1}
   ok(P.fury>=1,'acertar inimigos enche a barra da Erupção ('+i+' golpes)');
