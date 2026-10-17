@@ -62,9 +62,9 @@
    const h=e.hp;banner.t=0;eruption();res.push(w+(e.hp<h?'✓':'✗'));ok(e.hp<h&&banner.txt===WEAPON_POWER[w].n,'especial '+WEAPON_POWER[w].n+' ('+w+') acerta o inimigo ('+h+'→'+e.hp.toFixed(1)+')')}
   fresh();save.weapon='scythe';P.hp=1;const e2=mkEnemy({t:'cult',x:Math.floor(P.x/16)+1,y:Math.floor((P.y+P.h)/16)-1});e2.hp=99;ents.push(e2);const e3=mkEnemy({t:'cult',x:Math.floor(P.x/16)+2,y:Math.floor((P.y+P.h)/16)-1});e3.hp=99;ents.push(e3);
   e2.x=P.x+20;e2.y=P.y+P.h-e2.h;e3.x=P.x-20;e3.y=P.y+P.h-e3.h;eruption();ok(P.hp>1,'a Ceifa Violeta devolve vida (vida '+P.hp+')')}
- // braço fluido: a mão desliza entre as poses do golpe
- {fresh();save.weapon='spade';startAtk(1);const ys=[];let err=null;try{for(let i=0;i<14;i++){P.atk.t=i;drawHeldMelee('spade',{...heroPose(),k:'t0Atk'},100,100,false);ys.push(P.hand.y)}}catch(x){err=x}
-  let jump=0;for(let i=1;i<ys.length;i++)jump=Math.max(jump,Math.abs(ys[i]-ys[i-1]));const span=Math.max(...ys)-Math.min(...ys);ok(!err&&jump<6&&span>4,'no golpe a mão anda sem saltos grandes (percorre '+span.toFixed(1)+' px) (maior salto '+jump.toFixed(1)+' px)');P.atk=null} // braço em sincronia com a arma: o quadro do ataque segue a direção da arma
+ // a arma fica na mão do próprio sprite: no golpe o cabo acompanha a mão do quadro que está na tela
+ {fresh();save.weapon='spade';startAtk(1);const ys=[];let err=null,off=0;try{for(let i=0;i<14;i++){P.atk.t=i;const p={...heroPose(),k:'t0Atk'};drawHeldMelee('spade',p,100,100,false);const h=handAt(p,100,100);off=Math.max(off,Math.hypot(P.hand.x-h.x,P.hand.y-h.y));ys.push(P.hand.y)}}catch(x){err=x}
+  const span=Math.max(...ys)-Math.min(...ys);ok(!err&&off<.01&&span>4,'no golpe a arma segue a mão do sprite (percorre '+span.toFixed(1)+' px, maior distância da mão '+off.toFixed(2)+')');P.atk=null} // braço em sincronia com a arma: o quadro do ataque segue a direção da arma
  {save.weapon='sword';P.swapT=0;P.atk=null;startAtk(1);const seq=[];let okSync=true;for(let i=0;i<14;i++){const a=blades()[0].ang,p=heroPose();seq.push(p.fr);const exp=a<-1.5?0:a<-.45?1:a<.62?2:3;if(p.fr!==exp)okSync=false;P.atk.t++}
   ok(okSync&&new Set(seq).size>=2,'no ataque o braço acompanha a direção da arma: '+seq.join(''));P.atk=null}
  // escudo da bênção

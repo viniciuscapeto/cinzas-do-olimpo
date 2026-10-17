@@ -474,6 +474,31 @@ const WORLD = {
   r_tablet: () => small(20, 24, c => { c.shape((x, y) => x >= 1 && x <= 19 && y >= 4 && y <= 24 || (x - 10) ** 2 + (y - 6) ** 2 <= 81 && y < 6, 'stone'); c.grad('stone', 1, 3); weave(c, 'stone', 6);
     for (const [y, l] of [[8, 10], [11, 12], [14, 8], [17, 11]]) c.line(5, y, 5 + l, y, 'stone', 0, 1); c.set(3, 21, 'leaf', 3, 1); c.set(16, 22, 'leaf', 2, 1) }),
   r_pom: () => small(14, 16, c => { c.ball(7, 9.5, 5.6, 'red', 1, 4); c.poly([[4, 4], [10, 4], [9, 1], [7, 3], [5, 1]], 'gold', 3); c.set(4, 7, 'red', 4, 1); c.set(9, 12, 'red', 0, 1) }),
+  // seta da brasa-guia (aponta para a direita; o jogo gira): ponta de brasa entalhada, haste de bronze e cauda de chama
+  r_guide: () => small(18, 14, c => {
+    c.poly([[0, 2], [4, 5.5], [4, 8.5], [0, 12], [2, 7]], 'red', 2); c.grad('red', 1, 3);
+    c.rect(3, 5.5, 7, 3, 'bronze'); c.grad('bronze', 1, 3); c.rect(5, 5.5, 1, 3, 'gold', 3, 1); c.rect(7, 5.5, 1, 3, 'gold', 2, 1);
+    c.poly([[8, 0.5], [17.6, 7], [8, 13.5], [10.5, 7]], 'ember', 2); c.grad('ember', 1, 3);
+    c.line(9, 1.5, 16, 6.5, 'gold', 3, 1); c.line(12, 7, 15.5, 7, 'gold', 4, 1);
+  }),
+  // Lembrança de Teo (no sonho): carta dobrada em papel lilás, letra violeta e lacre com uma estrela
+  r_lem: () => small(24, 24, c => {
+    c.poly([[3, 4], [18, 2], [21, 6], [21, 21], [4, 22]], 'paper'); c.grad('paper', 2, 4);
+    c.poly([[18, 2], [17.5, 7], [21, 6]], 'paper', 1, 1); c.line(17.5, 6.5, 21, 6.5, 'paper', 0, 1);
+    for (const [y, l] of [[7, 10], [10, 13], [13, 11], [16, 7]]) c.line(6, y, 6 + l, y - .3, 'violet', (y & 1) ? 2 : 1, 1);
+    c.ball(15.5, 17.5, 3.2, 'violet', 1, 4); c.set(15, 16, 'paper', 4, 1); c.set(15, 18, 'violet', 0, 1); c.set(14, 17, 'violet', 0, 1); c.set(16, 17, 'violet', 0, 1);
+    c.set(4, 5, 'paper', 4, 1); c.set(5, 5, 'paper', 4, 1);
+  }),
+  // pergaminho das técnicas: rolo de papel com pontas de madeira e fita vermelha
+  r_scroll: () => small(24, 20, c => {
+    c.rect(4, 4, 16, 12, 'paper'); c.grad('paper', 2, 4);
+    for (const [y, l] of [[7, 10], [10, 8], [13, 11]]) c.line(6, y, 6 + l, y, 'ink', 2, 1);
+    for (const x of [2, 19]) { c.rect(x, 2, 3, 16, 'wood'); } c.grad('wood', 1, 4);
+    for (const x of [3, 20]) { c.set(x, 1, 'gold', 3, 1); c.set(x, 18, 'gold', 2, 1) }
+    c.rect(11, 3, 2, 14, 'red', 2, 1); c.ball(12, 10, 2.2, 'red', 1, 4); c.line(12, 12, 10, 17, 'red', 2, 1); c.line(12, 12, 14, 17, 'red', 1, 1);
+  }),
+  // orbe de vida que cai dos inimigos
+  r_orb: () => small(10, 10, c => { c.ball(5, 5, 4.2, 'red', 1, 4); c.set(3, 3, 'paper', 4, 1); c.set(4, 3, 'red', 4, 1) }),
   r_heart: () => small(18, 16, c => { c.heart(9, 8, 6.4, 'red'); c.grad('red', 1, 4); c.ring(9, 8, 8, 7, 'gold', 3, 1, (x, y) => y < 6); c.set(5, 5, 'red', 4, 1); c.set(6, 4, 'red', 4, 1); c.set(9, 9, 'ember', 4, 1) }),
 };
 // ---- Telma feita a partir das folhas do Teo (t0 = o Teo de capuz): mesmo traço e mesmas animações ----
