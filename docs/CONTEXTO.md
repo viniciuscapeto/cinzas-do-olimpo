@@ -12,7 +12,7 @@ Metroidvania 2D em pixel art, 100% no navegador, num único HTML. Resolução l�
 | Item | Quantidade |
 |---|---|
 | Áreas com nome | 50 |
-| Chefes | 23 (8 obrigatórios + 11 opcionais + 4 do Ato II) |
+| Chefes | 25 (8 obrigatórios + 11 opcionais + 4 do Ato II + 2 do Ato III) |
 | Armas corpo a corpo | 5: Espada, Lança, Foice, Martelo, Pá de Dimas |
 | Armas de tiro | Adagas do Coveiro (Ruínas, plataforma em x15 y18; até 5) e Arco (flecha normal e carregada; flechas de fogo depois). Com o arco, as adagas saem quando as flechas acabam. Munição NÃO volta com o tempo nem no altar: `meleeCharge()` dá 1 adaga a cada `KNIFE_HITS`=4 golpes de perto que acertam e 1 flecha a cada `ARROW_HITS`=7 (Aljava Encantada: 4; combo 10+ conta em dobro). O altar só garante `ALTAR_MIN_ARROWS`=3 flechas (olhos de bronze). Munição fica em `save.ammo` |
 | Níveis | 1 a 30. Inimigos e chefes dão experiência (`gainXp`, `xpNeed`, `BOSS_XP`); cada nível dá +4% de dano e a cada 4 níveis +1 de vida máxima |
@@ -89,6 +89,35 @@ Depois que Kalas cai, abre-se uma fenda no trono dele (`RIFTS`). Ela leva ao son
 
 Os inimigos do sonho são os comuns em tom violeta, com mais vida e experiência (`e.dream`). Saves antigos são convertidos: o mapa explorado é copiado para a largura nova (`W_OLD`), e quem já venceu o Submundo não recebe mais boatos.
 
+### Ato III · Telma
+
+Depois da Montanha que Sonha (que agora não encerra o jogo), abre-se uma fenda cor-de-rosa no Olho da Montanha (x343, y27). O mundo passou a ter **560 colunas**: x460-499 é a lembrança de Telma (ainda no sonho) e x500-559 é o Convento das Vozes (mundo real, no alto da montanha). Saves antigos de 340 ou 460 colunas são convertidos em `continueFrom`.
+
+| Lugar | O que tem |
+|---|---|
+| Quarto de Telma (x461-476, y72-83) | Telma criança (`telmakid`), 2 lembranças (`TLMS`: tlm1, tlm2), altar |
+| Jardim de Pano (arena x478-498) | **Sr. Bottoms, o coelho de pano** (`mkBotao`/`updBotao`, `B24`, `boss24Dead`): pulos com pétalas, botões que quicam, roseiras que brotam em fila, espiral de pétalas; rasgado (2ª fase): algodão que persegue e canção de ninar (anel de pétalas com uma brecha). Dá +1 de vida e o amuleto Sr. Bottoms |
+| Escadaria e Claustro (x501-536) | Telma presa (NPC `telma`; falar com ela chama `rescueTelma`), altar, cultistas e guardas |
+| Nave do Coro (arena x538-557) | **Malco, o Maestro das Vozes** (`mkMaestro`/`updMaestro`, `B25`, `boss25Dead`): notas ondulando, pauta (linhas altas = fique no chão, baixas = suba), crescendo em anéis, sinos do teto, coro; 2ª fase: escudo de som, réquiem (mira + coluna) e silêncio (escuro, ele some e reaparece). Final `FINAL_END` e `victory()` |
+
+**Telma junto** (`TF`, `updTelma`, `drawTelma`): no convento, depois de solta, ela segue o Teo (pula, e reaparece do lado se ficar presa). Na luta do Maestro canta a cada `TELMA_SONG` quadros: apaga as notas por perto e, se o Maestro estiver a menos de `TELMA_R`, quebra o escudo e o deixa tonto. Também joga flores que seguem o chefe.
+
+**Ataques com sprite:** projéteis aceitam `img` (sprite) e `upd` (comportamento: `curl`, `bounceUpd`, `homeUpd`, `wobble`); zonas novas `vine` e `sound` (`drawZoneT3`); zona `rain` aceita `drop:'bell'`.
+
+**Origem dos chefes:** `BOSS_LORE` (todos os 25) em Altar → Quem eram os chefes (`loreMenu`), e `BOSS_INTRO` (o que o Teo pensa quando um chefe do sonho ou do Ato III acorda pela primeira vez).
+
+**Modo criador:** na tela de viagem aparecem botões para ir direto às áreas novas (`CREATOR_SPOTS`, `creatorTp`). Recarregue o save do criador para ter o mapa novo inteiro aberto.
+
+### Ataques de assinatura
+
+Cada um dos 23 chefes antigos ganhou dois golpes só dele (`SIG`), com sprite e padrão próprios: a cada dois ataques (`SIG_EVERY`) ele usa um deles, com o aviso vermelho e o nome na tela (`sigName`). Exemplos: Corcel = Fogos da Festa e Ferraduras; Guardião = Ponteiros (os ponteiros giram em volta dele) e Ampulheta (areia que prende); Helena = Facho do Farol (atravesse com a investida); Coração = Pulsação (onda baixa: pule; alta: abaixe); Kalas = Círculos da Reza e Velas do Culto; A Febre = Delírio (metade das chamas é falsa); A Montanha = Pálpebras.
+
+Como funciona: `bossStep(b,fn)` substitui a chamada da IA em `updateBoss`; os estados `sigW` (aviso) e `sig` (golpe) são tratados fora da IA de cada chefe. `arenaOf(b)` mede a arena pelo mapa (chão, paredes, teto). Peças: `SH` (projétil com `img`, `upd`, `dw`, `slow`, `fake`, `dfn`), `FX` (zona `fx` com `warn`, `live`, `hurt`, `hurtIf`, `slow`, `draw`, `on`, `upd`) e `DROPS` (o que cai nas zonas de chuva). Sprites `s_*` gerados no `relic_build.js`. Para dar um golpe novo a um chefe, acrescente em `SIG[tipo]`.
+
+**Armas na mão:** punho em pixel art (`h_fist0/1`, luva ou manopla) em `drawFist`; armas grandes com a segunda mão no cabo (`TWO_HAND`). Arco: `drawBowHeld` usa o quadro de braço esticado do ataque, arco novo `w_bow2` em pé na mão, braço de trás puxando a corda, corda vibrando depois do tiro.
+
+**Telma** (`xTelma`) é gerada a partir das folhas do Teo de capuz (`t0Idle`, `t0Run`) no `relic_build.js` (`telmaFromTeo`): capa e capuz rosa-poeira, trança, cachecol. O coelho se chama **Sr. Bottoms**.
+
 **Mortes por tipo** (`DEATH`, `mkCorpse`): gárgula vira pedra e se desfaz (no ar, cai e se espatifa); soldado, cultista, bruto e cão explodem em sangue (`explodeGore`); mago, caveira e carniçal explodem em fogo e deixam marca queimada (`explodeFire`); zumbi desmonta em três pedaços e esqueleto desaba em ossos (`pieces`, desenhados com recorte de `drawEnemy`); fantasmas sobem e somem; criatura do pântano e aranha estouram em gosma. O sangue mancha chão e paredes, e quando Teo apanha a tela leva respingos que escorrem (`splats`).
 
 **Visual:** tom de cor escuro (`drawGrade`, mais avermelhado no Submundo), granulação de filme nos gráficos nítidos e vinheta mais forte. Investida com onda e riscos de velocidade, poeira na aterrissagem (`landFx`), faíscas e marcas ao deslizar na parede.
@@ -118,6 +147,7 @@ Os inimigos do sonho são os comuns em tom violeta, com mais vida e experiência
 | `tools/weapon_build.ps1` | armas do Gemini: lê `Documents\Cinzas do Olimpo\sprite-gemini\armas\{espada,lanca,foice,martelo,pa,arco}.png/jpg` (fundo magenta), reduz e grava `w_<arma>` entre `// ARMAS-INICIO` e `// ARMAS-FIM` no `src/cinzas.html`. Arma que não tiver arquivo continua desenhada em pixels |
 | `tools/item_build.ps1` | ícones e itens do Gemini: recorta `sprite-gemini/armas/itens.jfif` (folha 4x2) e `investida.jfif` e grava `i_*` (adaga, poção, botas, manopla, escudo, cinzas, moedas, investida) entre `// ITENS-INICIO` e `// ITENS-FIM`. Usados no HUD (`icon`) e nos itens do mapa (`itemIcon`) |
 | `tools/teo_build.ps1` | evolução do Teo: lê as folhas 4x2 do Gemini em `sprite-gemini/teo` (mapa de qual imagem/quadro vira cada pose está no topo do script; quadros que faltam usam substitutos da própria fase), reduz a 31 px de altura com 2x detalhe, alinha os pés e acha a mão; grava `t<fase><Idle/Run/Atk/Jump/Crouch/Dead>`, `TEO_DETAIL` e `TEO_HAND` entre `// TEO-INICIO` e `// TEO-FIM`. O herói usa a folha da fase de `heroStage()` e a arma é desenhada na mão |
+| `tools/relic_build.js` | sprites desenhados em código (Node): os 25 amuletos (`a_<id>`, 24×24, aparecem no menu de amuletos, na loja da Zoe e na mensagem do baú via `charmImg`), o bilhete dos ecos (`r_eco`, flutuando em `drawEco` e no menu Ecos) e o altar de cura (`r_altar` / `r_altarLit`, 40×56 desenhado com 20×28 em `drawStatues`). Grava entre `// AMULETOS-INICIO` e `// AMULETOS-FIM`; `node tools/relic_build.js folha.png` também gera uma folha ampliada para conferir. Amuleto novo: crie `D.<id>` no script |
 | `tools/swapfuncs.ps1` | troca funções inteiras no HTML a partir de um arquivo com blocos `//@@nomeDaFuncao` |
 | `tests/` | testes headless em Node (`run_tests.ps1 <suite>.js`) |
 | `art/` | folhas originais do Gemini e o `GUIA-SPRITES.md` com o prompt-base para gerar novos sprites |
@@ -199,6 +229,8 @@ Os testes rodam o jogo inteiro no Node, sem navegador (o canvas é falso), e sim
 | `harness_story` | abertura com a história de Teo, Mira, inscrição, Corcel, Ilía, rio, três cães, porta do sino com 5 brasas, Andros (2 fases), Coração da Montanha e final |
 | `harness_creator` | modo criador escondido, save com tudo liberado (vida, ecos, armas, técnicas, amuletos, forja, chefes, altares, mapa), viagem por todos os altares e volta ao save normal |
 | `harness_arms` | munição que só volta batendo de perto, altar com 3 flechas, munição no save, arma na mão ao pegar/trocar, arco na mão, desenho de todas as armas |
+| `harness_telma` | Ato III: mapa de 560 colunas, save antigo, fenda rosa, lembranças, Sr. Bottoms, convento, soltar a Telma, Telma seguindo, Maestro com escudo e canto, final, origem dos chefes, amuleto Sr. Bottoms, teleporte do criador |
+| `harness_sig` | os 46 golpes de assinatura dos 23 chefes: arena medida, cada golpe solta o que deve e roda sem erro, e cada chefe usa a assinatura no ciclo normal |
 | `harness_levels` | adagas, níveis, inimigos mais fortes e furiosos, boatos do Submundo, sangue, combo e mapa da viagem |
 
 **Dica:** ver o jogo de verdade sem abrir janela. Rode o Edge headless com perfil separado:

@@ -13,7 +13,7 @@
  save.flags.under=1;s=snap();ok(at(s)&&s.line.includes('Submundo'),'depois: Kalas');
  save.boss17Dead=true;s=snap();ok(at(s)&&s.line.includes('trono'),'depois: a fenda do sonho');
  save.flags.rift=1;for(const k of ['boss18Dead','boss19Dead','boss20Dead','boss21Dead']){s=snap();ok(at(s),'Ato II: '+s.line.slice(0,40)+'…');save[k]=true}
- save.flags.sonho=1;s=snap();ok(at(s)&&s.line.includes('bilhetes')||s.line.includes('Bilhetes'),'no fim: os Ecos que faltam');
+ save.flags.sonho=1;for(const f of [()=>0,()=>{save.flags.pink=1},()=>{save.boss24Dead=true},()=>{save.flags.convent=1},()=>{save.flags.telma=1}]){f();s=snap();ok(at(s),'Ato III: '+s.line.slice(0,40)+'…')}save.boss25Dead=true;s=snap();ok(at(s)&&s.line.includes('bilhetes')||s.line.includes('Bilhetes'),'no fim: os Ecos que faltam');
  save.taken.push(...ECOS.map(e=>e.id));ok(storyStep()===null,'com tudo feito não há próximo passo');
  // desenho do guia, do mapa e do quadro
  newGame();state='play';let err=null;try{objT=200;objLast=objective();drawStory();showMap=true;drawMap();showMap=false;objT=0;drawStory()}catch(x){err=x}

@@ -11,9 +11,9 @@
   reset();state='play';ok(P.ward===1,'depois de morrer/voltar, a bênção vem acesa');
   // romãs na luta da Besta
   ents.forEach(e=>e.dead=true);P.x=55*16;P.y=54*16-22;P.inv=999999;run(3);
-  let got=0;const hp0=P.hp;for(let i=0;i<1400;i++){step();if(items.some(it=>it.id==='pom'))got++;}
+  let got=0;const hp0=P.hp;for(let i=0;i<2400;i++){step();if(items.some(it=>it.id==='pom')){got++;break}}
   ok(B5.state!=='sleep'&&got>0,'na luta da Besta caem romãs');
-  const pm=items.find(it=>it.id==='pom');P.hp=2;if(pm){P.x=pm.x;P.y=pm.y-10;run(30)}ok(P.hp===3,'pegar a romã dá +1 de vida');
+  const pm=items.find(it=>it.id==='pom');P.hp=2;P.inv=1e9;if(pm){P.x=pm.x;P.y=pm.y-10;run(30)}P.inv=0;ok(P.hp===3,'pegar a romã dá +1 de vida');
   // romãs na luta da Tecelã
   newGame();state='play';scr.hidden=true;save.boss2Dead=true;save.ab.jump=save.ab.wall=true;reset();state='play';ents.forEach(e=>e.dead=true);
   P.x=250*16;P.y=54*16-22;P.inv=999999;run(3);got=0;for(let i=0;i<1400;i++){step();if(items.some(it=>it.id==='pom'))got++}

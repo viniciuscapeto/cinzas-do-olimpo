@@ -4,10 +4,10 @@
  const fresh=f=>{newGame();state='play';scr.hidden=true;all();if(f)f();reset();state='play';P.inv=0};
  const put=(x,y)=>{P.x=x*16+3;P.y=(y+1)*16-22;P.vx=P.vy=0;cam.x=P.x-160;cam.y=P.y-90;clampCam()};
  // o mundo novo está lacrado e não vaza para o mapa antigo
- fresh();let leak=0;for(let y=0;y<H;y++)if(!solid(tile(339,y)))leak++;ok(W===460&&leak===0,'região nova lacrada (coluna 339 toda em rocha)');
+ fresh();let leak=0;for(let y=0;y<H;y++)if(!solid(tile(339,y)))leak++;ok(W===560&&leak===0,'região nova lacrada (coluna 339 toda em rocha)');
  ok(zoneAt(350,90)==='Margem do Sonho'&&zoneAt(440,40)==='Espelho do Eco'&&zoneAt(360,10)==='Olho da Montanha','nomes das áreas do sonho');
  // inimigos do sonho nascem em lugar livre e não caem para fora da faixa
- const idx=ENEMY_SPAWNS.map((s,i)=>s.x>=339?i:-1).filter(i=>i>=0);
+ const idx=ENEMY_SPAWNS.map((s,i)=>s.x>=339&&s.x<460?i:-1).filter(i=>i>=0);
  ok(idx.length>=25&&idx.every(i=>ents[i].dream),'30 inimigos do sonho, todos marcados');
  ok(idx.every(i=>!solid(tile(Math.floor((ents[i].x+ents[i].w/2)/16),Math.floor((ents[i].y+ents[i].h/2)/16)))),'nenhum inimigo nasce dentro da rocha');
  {const band=y=>y>=86?0:y>=60?1:y>=30?2:3;const b0=idx.map(i=>band(ents[i].y/16));P.inv=1e9;
@@ -29,7 +29,7 @@
  fight(()=>B18,440,97,()=>{ok(save.boss18Dead&&save.weapons.includes('shovel'),'Dimas cai e dá a Pá de Dimas');close();ok(tile(453,85)==='.'&&tile(449,95)==='=','abre a saída do cemitério')});
  fight(()=>B19,355,83,()=>{ok(save.boss19Dead&&save.charms.includes('febre'),'a Febre cai e dá o amuleto');close();ok(tile(344,59)==='.','abre a saída do quarto')});
  fight(()=>B20,440,57,()=>{ok(save.boss20Dead&&save.ab.echo,'o Eco cai e dá o Passo do Eco');close();ok(tile(453,29)==='.','abre a saída da arena do Eco')});
- fight(()=>B21,360,27,()=>{ok(save.boss21Dead&&save.flags.sonho&&state==='win','a Montanha cai e mostra o final novo');ok(panel.innerHTML.includes('Sonho da Montanha')&&panel.innerHTML.includes('de 23'),'tela de fim conta o sonho e os 23 chefes')});
+ fight(()=>B21,360,27,()=>{ok(save.boss21Dead&&save.flags.sonho&&state!=='win','a Montanha cai e o jogo continua (Ato III)');close();ok(RIFTS.some(r=>r.pink&&r.x===343&&r.on()),'abre a fenda cor-de-rosa no Olho da Montanha')});
  // caminho: as saídas levam de uma faixa para a outra
  fresh(()=>{save.boss18Dead=save.boss19Dead=save.boss20Dead=true});ok(tile(453,84)==='.'&&tile(344,58)==='.'&&tile(453,28)==='.','saídas abertas ao carregar o save');
  ok(!solid(tile(452,86))&&tile(452,86)==='=','degrau embaixo de cada buraco');

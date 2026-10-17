@@ -14,7 +14,7 @@
 
   // ---------- mundo ----------
   fresh();
-  ok(W===460&&grid[0].length===460,'mundo tem 460 colunas');
+  ok(W===560&&grid[0].length===560,'mundo tem 560 colunas');
   ok(tile(179,12)==='#','passagem leste fechada antes da escultora');
   save.boss2Dead=true;save.ab.jump=save.ab.dash=save.ab.wall=true;save.bossDead=true;reset();state='play';ents.forEach(e=>e.dead=true);
   ok(tile(179,12)==='.','passagem leste aberta depois da escultora');
@@ -146,7 +146,7 @@
   ok(B9.hp<hh,'pulando dá para acertar o coração no alto ('+hh+'→'+B9.hp+')');
   B9.hp=1;B9.state='stun';hitBoss(5);for(let i=0;i<130&&state==='play';i++)step();
   ok(state==='scene'&&SC.title==='O amanhecer','vencer o coração mostra o final');finishScene();ok(state==='win','tela de fim');
-  ok(panel.innerHTML.includes('de 23'),'tela de fim conta os 23 chefes');
+  ok(panel.innerHTML.includes('de 25'),'tela de fim conta os 25 chefes');
 
   // ---------- salvar e continuar ----------
   fresh();save.ash=33;save.tech.charge=true;save.cp={x:181,y:13};persist();

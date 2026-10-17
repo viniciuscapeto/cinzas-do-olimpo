@@ -1,7 +1,7 @@
 ;(function(){readEco=function(){};const ok=(c,m)=>console.log((c?'OK   ':'FALHA ')+m);
  // nenhum chefe acorda com o Teo fora da sala dele (andar de baixo, atrás da parede...)
  newGame();state='play';scr.hidden=true;Object.assign(save,creatorSave());reset();state='play';
- const BS=()=>[B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,B18,B19,B20,B21,B22,B23];
+ const BS=()=>[B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,B18,B19,B20,B21,B22,B23,B24,B25];
  const air=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&!solid(grid[y][x]);
  // até onde dá para andar (por ar) a partir de cada chefe
  const reach={};
