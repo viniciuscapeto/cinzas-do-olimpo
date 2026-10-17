@@ -28,7 +28,10 @@ const RAMP = {
   leaf:   ['#0c2410', '#1a4a1e', '#2e7a30', '#5aae48', '#a8e080'],
   button: ['#0e0a14', '#241c30', '#3a3048', '#5a4e6a', '#8a7ea0'],
   rag:    ['#22121a', '#4e2c3a', '#7e5262', '#a8808e', '#d0aab6'],
+  moss:   ['#141c10', '#2a3a20', '#465a34', '#6a7e4e', '#9aa878'],
+  teal:   ['#0a1e22', '#16404a', '#2a6e78', '#58a8a8', '#a8e0d8'],
 };
+// a mesma paleta está copiada em PAL_RAMP no src/cinzas.html (os sprites de fora são trazidos para ela ao carregar)
 const OUT_DARK = 0.45; // contorno = tom mais escuro do material vizinho, escurecido
 
 function Canvas(w, h) {
