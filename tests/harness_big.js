@@ -126,6 +126,7 @@
   place(250,54);run(5);ok(B8&&B8.state!=='sleep','a Tecelã acorda');
   bossTest(()=>B8,null,['hang','dropW','drop','spitW','chargeW','climb'],'Tecelã');
   B8.state='idle';B8.hp=1;hitBoss(5);const mh2=save.maxHp;for(let i=0;i<130&&state==='play';i++)step();
+  {let g=0;while(state==='scene'&&g++<20)sceneStep(false)} // a lembrança das fitas vem antes do pergaminho
   ok(state==='msg'&&save.taken.includes('pg4')&&save.maxHp===mh2+1,'vencer a Tecelã dá o pergaminho 4 e +1 vida');state='play';scr.hidden=true;
 
   // cães abrem a porta quando já tem as outras brasas

@@ -8,7 +8,9 @@
   "scripts": {
     "prepare-game": "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force game | Out-Null; Copy-Item ..\\index.html,..\\manifest.json,..\\icon-192.png,..\\icon-512.png game -Force\"",
     "start": "npm run prepare-game && electron .",
-    "build": "npm run prepare-game && electron-builder --win portable"
+    "build": "npm run prepare-game && electron-builder --win portable",
+    "prepare-demo": "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force game | Out-Null; Copy-Item ..\\demo\\index.html,..\\demo\\manifest.json,..\\demo\\icon-192.png,..\\demo\\icon-512.png game -Force\"",
+    "build-demo": "npm run prepare-demo && electron-builder --win portable -c.productName=\"Cinzas do Olimpo Demo\" -c.directories.output=dist-demo && npm run prepare-game"
   },
   "devDependencies": {
     "electron": "^44.7.2",

@@ -46,7 +46,8 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 .panel p{margin:0}
 .panel .credit{font-size:.8rem;color:var(--dim)}
 .btn{font-family:var(--f-display);font-weight:800;background:var(--ember);color:var(--night);border:0;padding:10px 24px;font-size:1.05rem;cursor:pointer;letter-spacing:.04em}
-button:focus-visible{outline:2px solid var(--bone);outline-offset:3px}
+button:focus-visible,.panel .pf{outline:2px solid var(--bone);outline-offset:3px}
+.tech input[type=range]{width:100%;accent-color:var(--ember)}.tech input[type=range].pf{outline-offset:1px}
 .bar{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap;font-family:var(--f-pix);font-size:.7rem;color:var(--dim);letter-spacing:.05em}
 .bar b{color:var(--gold);font-weight:400}
 .tools{display:flex;gap:8px;flex-wrap:wrap}
@@ -139,6 +140,7 @@ kbd{font-family:var(--f-pix);font-size:.66rem;border:1px solid var(--edge);paddi
 img.ic{width:48px;height:48px;image-rendering:pixelated}img.ic.big{width:72px;height:72px;display:block;margin:4px auto 8px}
 .btn.sm{padding:6px 14px;font-size:.85rem;justify-self:start}
 .btn:disabled{opacity:.35;cursor:default}
+.btn.sm.wide{justify-self:stretch}
 </style>
 </head>
 <body>
@@ -150,7 +152,7 @@ img.ic{width:48px;height:48px;image-rendering:pixelated}img.ic.big{width:72px;he
   <div class="play" id="play">
     <div class="stage" id="stage">
       <canvas id="cv" width="320" height="180" aria-label="Tela do jogo"></canvas>
-      <div class="fsbar"><button data-map>Mapa</button><button data-fs>Tela cheia</button></div>
+      <div class="fsbar"><button data-pause>Pausa</button><button data-map>Mapa</button><button data-fs>Tela cheia</button></div>
       <div class="talk" id="talk" hidden><canvas id="talkFace" width="48" height="48" aria-hidden="true"></canvas><div class="tbody"><b id="talkName"></b><p id="talkText" aria-live="polite"></p><small>toque ou aperte atacar para continuar</small></div></div>
       <div class="screen" id="scr"><div class="panel" id="panel"></div></div>
     </div>
@@ -172,7 +174,8 @@ img.ic{width:48px;height:48px;image-rendering:pixelated}img.ic.big{width:72px;he
     <span>Investida <kbd>K</kbd> <kbd>C</kbd> <kbd>Shift</kbd></span>
     <span>Falar <kbd>↓</kbd> ou <kbd>E</kbd></span>
     <span>Descer da madeira <kbd>↓</kbd>+pular</span>
-    <span>Mapa <kbd>M</kbd> · Tela cheia <kbd>F</kbd></span>
+    <span>Mapa <kbd>M</kbd> · Tela cheia <kbd>F</kbd> · Pausa, salvar e opções <kbd>Esc</kbd> <kbd>P</kbd></span>
+    <span>Controle de Xbox/PlayStation também funciona (Start pausa)</span>
     <span>Técnicas (aprenda com Damião): segure <kbd>J</kbd> · <kbd>J</kbd> durante a investida · <kbd>Q</kbd> com ⅓ da barra</span>
   </div></details>
 </div>
@@ -180,6 +183,8 @@ img.ic{width:48px;height:48px;image-rendering:pixelated}img.ic.big{width:72px;he
 <script>
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 ctx.imageSmoothingEnabled=false;
+// versão demo: tools/build_app.ps1 -Demo troca para true. Termina depois de Andros, o sineiro
+const DEMO=false;
 const TS=16,VW=320,VH=180,W=560,H=100,W_OLD=340;
 const G=0.45,MAXF=7.5,RUN=2.1,JUMP=-7.4,JUMP2=-7.8,DASHV=6,DASHT=12;
 const FONT='8px Silkscreen, monospace';
@@ -777,6 +782,50 @@ const MEMS=[
     'Ensinou a ele uma única ordem: proteja os mineiros.',
     'Quando a cinza enterrou a mina, o Colosso não parou. Cavou dez anos procurando por eles, e esmagava quem chegasse perto.']],
 ];
+// lembranças dos chefes que antes só davam o item: um respiro de história entre uma luta e outra
+const BOSS_MEMS={
+  spirit:['Memória · O bosque de Cássia',['Antes da cinza, o bosque de cima era o lugar mais verde de Olimpo. Cássia caçava ali com o pai e os dois irmãos.',
+    'Na noite da festa, uma brasa caiu da montanha entre as árvores. Ela não se apagou. Comeu o bosque inteiro, e depois o chão afundou.',
+    'Cássia passou dez anos atirando flechas num fogo que não morria. Hoje, pela primeira vez, as raízes ficaram frias.']],
+  queen:['Memória · O ninho',['Ilía esculpiu as gárgulas do templo submerso para espantar os pombos. A maior ela chamou de Rainha, de brincadeira.',
+    'O culto encheu a pedra de brasa e mandou que ela vigiasse o caminho do santuário. As outras gárgulas acordaram para servir a ela.',
+    'Nas asas caídas ainda dá para ver as marcas do cinzel de Ilía. Elas não foram feitas para voar. Agora vão.']],
+  tornado:['Memória · Tudo o que queimou',['O redemoinho se desfaz e a cinza cai devagar, como neve. Dentro dela, Teo ouve vozes: um vendedor de figos, uma criança chamando o cachorro, um sino de cabra.',
+    'É tudo o que a cidade queimou em dez anos de noite, girando junto e sem nome no fundo do santuário.',
+    'Teo espera a última cinza cair. Lá embaixo, alguém acende velas. Uma para cada voz.']],
+  weaver:['Memória · As fitas',['O Jardim de Pedra era onde os namorados de Olimpo amarravam fitas nas estátuas, com os dois nomes escritos.',
+    'Uma aranha pequena começou a tecer entre as fitas. Com a cinza, a teia ficou pesada, e a aranha cresceu para aguentar o peso.',
+    'No fundo da teia estão centenas de fitas desbotadas, presas como moscas. Teo solta uma por uma. Os nomes ainda dão para ler.']],
+  beast:['Memória · A margem',['A irmã Odete dava pão ao bicho do pântano toda manhã. Ele vinha devagar e comia da mão dela, sem morder.',
+    'Depois da cinza, o rio começou a deixar mortos na margem. O bicho tinha fome. Ninguém mais trazia pão.',
+    'Quando ele cai, solta um som baixo, quase o ronco de um cachorro velho. Teo fica do lado dele até o fim.']],
+  glutton:['Memória · As oferendas',['Toda noite as famílias deixavam pão, vinho e mel no ossuário para os seus mortos.',
+    'Um coveiro do culto comia tudo antes de amanhecer. "Os mortos não sentem fome", ele dizia. A montanha ouviu e gostou da ideia.',
+    'Teo também é coveiro. Ele junta o que sobrou e arruma de novo, uma oferenda na frente de cada nicho.']],
+  automaton:['Memória · O sótão',['Bronte subiu ao sótão da torre com um autômato pequeno e uma caixa de ferramentas. "Conserta o relógio até eu voltar", disse.',
+    'Bronte nunca voltou. O autômato apertou o mesmo parafuso por dez anos e expulsava qualquer um que chegasse perto da engrenagem.',
+    'Antes de parar, ele estende a chave para Teo, como quem passa o turno.']],
+};
+// o que Teo pensa ao chegar perto da porta de um chefe (uma vez por save): a calma antes da luta
+const PRE_BOSS={
+  mino:'Música de festa vindo da praça. Ninguém toca essa música há dez anos.',
+  medusa:'Estátuas de gente com cara de susto. Melhor não olhar ninguém nos olhos aqui.',
+  cerb:'Três cães dormindo em volta de uma cova. A lápide... eu não quero ler a lápide.',
+  clock:'A torre inteira treme a cada segundo. Alguém lá em cima não quer que o tempo ande.',
+  banner:'Um estandarte de pé, sozinho, no meio do pátio. Ainda tem alguém segurando.',
+  beast:'A lama aqui se mexe sozinha. E ronca.',
+  weaver:'Fitas velhas presas na teia. Tem nomes escritos nelas.',
+  widow:'A luz do farol está acesa. Alguém subiu lá para acender.',
+  colossus:'Passos de bronze no fundo da mina. Pesados. Procurando alguma coisa.',
+  glutton:'Cheiro de mel estragado e osso. Alguém andou comendo as oferendas.',
+  automaton:'Um parafuso sendo apertado. De novo. E de novo.',
+  spirit:'As raízes estão quentes. A Cássia disse que o fogo mora lá no fundo.',
+  jailer:'Alguém conta em voz alta lá dentro. Sempre para no mesmo número.',
+  statue:'Uma deusa de mármore com brasa no lugar dos olhos. Eu conheço esse jeito de olhar.',
+  queen:'Asas batendo lá em cima. Muitas. E uma maior que todas.',
+  tornado:'Não devia ventar aqui embaixo. E esse vento está cheio de vozes.',
+  priest:'Velas. Centenas delas. E alguém rezando o nome do meu pai.',
+};
 const PRE_ARES=['No fundo da montanha, numa câmara escavada na rocha, o capitão Andros segura a corda de um sino enorme. A armadura da guarda está coberta de dez anos de cinza.',
   '"Filho. Você não devia ter descido."',
   '"Se o sino parar, a noite acaba. E você vai embora com ela. Eu já te enterrei uma vez. Não me peça para fazer isso de novo."',
@@ -1108,7 +1157,7 @@ function setDoor11(closed){for(let r=46;r<=53;r++)grid[r][289]=closed?'#':'.'}
 function openPort(){for(let r=20;r<=24;r++){grid[r][260]='.';grid[r][261]='.'}}
 const emberCount=()=>[save.bossDead,save.boss2Dead,save.boss3Dead,save.boss6Dead,save.boss7Dead].filter(Boolean).length;
 /* 3 espaços de save: o espaço 1 usa a chave antiga (quem já jogava continua de onde parou) */
-const slotKey=n=>n===1?'cinzas-save2':'cinzas-save-s'+n;
+const slotKey=n=>DEMO?'cinzas-demo-s'+n:n===1?'cinzas-save2':'cinzas-save-s'+n;
 let SLOT=1;try{SLOT=Math.min(3,Math.max(1,+localStorage.getItem('cinzas-slot')||1))}catch(_){}
 const SAVE_KEY=()=>slotKey(SLOT);
 function setSlot(n){SLOT=n;try{localStorage.setItem('cinzas-slot',String(n))}catch(_){}}
@@ -1232,22 +1281,96 @@ function mkMedusa(){return{kind:'medusa',name:'ILÍA, A ESCULTORA',x:172*TS,y:14
 
 /* ---------- entrada ---------- */
 const keys={};let prev={};
-const KEYMAP={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowDown:'down',KeyS:'down',
+/* teclas: o jogador pode trocar (Opções > Teclas); Esc, P, M e F ficam fixas */
+const ACTIONS=[['left','Esquerda'],['right','Direita'],['down','Baixo / interagir'],['jump','Pular'],['attack','Atacar'],['dash','Investida'],['shoot','Tiro'],['heal','Cura'],['power','Poder'],['swap','Trocar arma']];
+const KEYMAP_DEF={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowDown:'down',KeyS:'down',
   ArrowUp:'jump',KeyW:'jump',Space:'jump',KeyZ:'jump',KeyE:'down',KeyQ:'power',KeyL:'power',KeyJ:'attack',KeyX:'attack',KeyK:'dash',KeyC:'dash',ShiftLeft:'dash',ShiftRight:'dash',KeyR:'heal',KeyH:'heal',KeyI:'shoot',KeyV:'shoot',KeyT:'swap'};
+const KEY_FIXED=['Escape','KeyP','KeyM','KeyF','Enter','Tab'];
+let KEYMAP={...KEYMAP_DEF};try{const m=JSON.parse(localStorage.getItem('cinzas-teclas')||'null');if(m&&typeof m==='object')KEYMAP=m}catch(_){}
+function saveKeymap(){try{localStorage.setItem('cinzas-teclas',JSON.stringify(KEYMAP))}catch(_){}}
+function bindKey(act,code){if(KEY_FIXED.includes(code))return false;for(const c in KEYMAP)if(KEYMAP[c]===act)delete KEYMAP[c];KEYMAP[code]=act;saveKeymap();return true}
+const keyName=c=>({ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓',Space:'Espaço',ShiftLeft:'Shift',ShiftRight:'Shift dir.',ControlLeft:'Ctrl',ControlRight:'Ctrl dir.',AltLeft:'Alt',Backspace:'Apagar',CapsLock:'Caps'}[c]||c.replace(/^Key|^Digit/,'').replace(/^Numpad/,'Num '));
+const keysOf=a=>Object.keys(KEYMAP).filter(c=>KEYMAP[c]===a);
 // toques rápidos ficam guardados até o jogo processar (não se perdem na pausa de impacto)
 const tapped={};
 const pressed=k=>(keys[k]&&!prev[k])||tapped[k];
+// teclado e controle seguram as ações separados: soltar um não solta o outro
+const kbHeld={},padHeld={};
+let rebinding=null;
 addEventListener('keydown',e=>{
+  if(rebinding){e.preventDefault();const a=rebinding;rebinding=null;if(e.code!=='Escape'&&!bindKey(a,e.code))say(keyName(e.code)+' já é fixa');keysMenu();return}
   if(state==='play')audioInit();
-  if(state==='talk'&&['Space','Enter','KeyJ','KeyX','KeyZ','ArrowUp','KeyW','KeyE','ArrowDown','KeyS'].includes(e.code)){e.preventDefault();if(!e.repeat)advanceTalk();return}
-  if(state==='scene'&&['KeyJ','KeyX','KeyZ'].includes(e.code)){e.preventDefault();if(!e.repeat&&!finishType())sceneStep(false);return}
+  const act=KEYMAP[e.code];
+  if(state==='talk'&&(['Space','Enter'].includes(e.code)||['attack','jump','down'].includes(act))){e.preventDefault();if(!e.repeat)advanceTalk();return}
+  if(state==='scene'&&(e.code==='Enter'||act==='attack'||act==='jump')){e.preventDefault();if(!e.repeat&&!finishType())sceneStep(false);return}
+  if((e.code==='Escape'||e.code==='KeyP')&&!e.repeat){if(state==='play'){e.preventDefault();pauseMenu();return}if(menuBack())return}
+  if(!scr.hidden&&state!=='scene'&&menuNav(e.code)){e.preventDefault();return}
   if(e.code==='KeyM'&&state==='play'){showMap=!showMap;if(showMap)objT=Math.max(objT,1);return}
   if(e.code==='KeyF'){toggleFs();return}
-  const k=KEYMAP[e.code];if(!k)return;
-  if(state==='play'||state==='dead'){e.preventDefault();if(!keys[k]&&!e.repeat)tapped[k]=true;keys[k]=true}
+  if(!act)return;
+  if(state==='play'||state==='dead'){e.preventDefault();if(!keys[act]&&!e.repeat)tapped[act]=true;kbHeld[act]=true;keys[act]=true}
 });
-addEventListener('keyup',e=>{const k=KEYMAP[e.code];if(k)keys[k]=false});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
+addEventListener('keyup',e=>{const k=KEYMAP[e.code];if(k){kbHeld[k]=false;keys[k]=!!padHeld[k]}});
+addEventListener('blur',()=>{for(const k in keys)keys[k]=kbHeld[k]=padHeld[k]=false});
+
+/* menus pelo teclado e pelo controle: setas andam entre os botões, Enter/A aperta, Esc/B volta */
+function menuButtons(){return [...panel.querySelectorAll('button,input[type=range]')].filter(b=>!b.disabled&&b.offsetParent!==null)}
+function menuFocus(b){panel.querySelectorAll('.pf').forEach(x=>x.classList.remove('pf'));if(b){b.classList.add('pf');b.focus({preventScroll:false})}}
+function menuNav(code){
+  const dir={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[code];
+  if(code==='Enter'){const b=document.activeElement;if(b&&panel.contains(b)&&b.tagName==='BUTTON'){b.click();return true}return false}
+  if(!dir)return false;
+  const cur=document.activeElement&&panel.contains(document.activeElement)?document.activeElement:null;
+  if(cur&&cur.type==='range'&&dir[0]){cur.value=Math.max(0,Math.min(100,+cur.value+dir[0]*10));cur.dispatchEvent(new Event('input',{bubbles:true}));return true}
+  const bs=menuButtons();if(!bs.length)return false;
+  if(!cur){menuFocus(bs[0]);return true}
+  const r=cur.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let best=null,bd=1e9;
+  for(const b of bs){if(b===cur)continue;const q=b.getBoundingClientRect(),dx=q.left+q.width/2-cx,dy=q.top+q.height/2-cy;
+    const along=dx*dir[0]+dy*dir[1];if(along<=2)continue;const side=Math.abs(dx*dir[1]+dy*dir[0]);const d=along+side*2.5;if(d<bd){bd=d;best=b}}
+  if(!best&&dir[1]){const i=bs.indexOf(cur);best=bs[(i+dir[1]+bs.length)%bs.length]}
+  if(best)menuFocus(best);return true;
+}
+// voltar: o botão de sair/voltar do menu aberto
+function menuBack(){
+  if(scr.hidden||state==='scene'||state==='title')return false;
+  const b=panel.querySelector('[data-back]')||[...panel.querySelectorAll('[data-go]')].reverse().find(x=>['resume','altar','pause','opts','title'].includes(x.dataset.go)&&!x.disabled);
+  if(b){b.click();return true}return false;
+}
+
+/* controle (Xbox, PlayStation e genéricos no layout padrão) */
+const PAD_MAP={0:'jump',2:'attack',1:'dash',7:'dash',3:'shoot',4:'swap',5:'power',6:'heal',13:'down',14:'left',15:'right'};
+let padPrev=[],padSeen=false;
+function pollPad(){
+  const gp=navigator.getGamepads?[...navigator.getGamepads()].find(g=>g&&g.connected):null;if(!gp)return;
+  const b=i=>!!(gp.buttons[i]&&(gp.buttons[i].pressed||gp.buttons[i].value>.5));
+  const ax=gp.axes[0]||0,ay=gp.axes[1]||0;
+  const now={};for(const i in PAD_MAP)if(b(+i))now[PAD_MAP[i]]=true;
+  if(ax<-.45)now.left=true;if(ax>.45)now.right=true;if(ay>.6&&Math.abs(ax)<.5)now.down=true;
+  // botões “de menu” (borda): A, B, Start, Select e direções
+  const edge=i=>b(i)&&!padPrev[i];
+  const dirs=[ay<-.6||b(12),ay>.6||b(13),ax<-.6||b(14),ax>.6||b(15)];
+  const dEdge=dirs.map((v,i)=>v&&!padPrev['d'+i]);
+  if(!padSeen&&gp.buttons.some(x=>x.pressed)){padSeen=true;say('Controle conectado')}
+  if(state==='play'||state==='dead'){
+    // só mexe quando o botão muda: o toque na tela continua valendo, e o botão que já vinha apertado de um menu não dispara sozinho
+    for(const [a] of ACTIONS){const v=!!now[a];if(v!==!!padHeld[a]){padHeld[a]=v;if(v&&!keys[a])tapped[a]=true;keys[a]=v||!!kbHeld[a]}}
+    if(state==='play'&&edge(9))pauseMenu();
+    else if(state==='play'&&edge(8)){showMap=!showMap;if(showMap)objT=Math.max(objT,1)}
+  }else{
+    for(const [a] of ACTIONS)padHeld[a]=!!now[a];
+    if(state==='talk'){if(edge(0)||edge(2))advanceTalk()}
+    else if(state==='scene'){if(edge(0)||edge(2)){if(!finishType())sceneStep(false)}}
+    else if(!scr.hidden){
+      if(rebinding){if(edge(1)||edge(9)){rebinding=null;keysMenu()}}
+      else{
+        ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].forEach((c,i)=>{if(dEdge[i])menuNav(c)});
+        if(edge(0)){const f=document.activeElement;if(f&&panel.contains(f)&&f.tagName==='BUTTON')f.click();else{const bs=menuButtons();if(bs[0])menuFocus(bs[0])}}
+        if(edge(1)||edge(9))menuBack();
+      }
+    }
+  }
+  padPrev=gp.buttons.map(x=>x.pressed||x.value>.5);dirs.forEach((v,i)=>padPrev['d'+i]=v);
+}
 const pad=document.getElementById('pad'),powBtn=document.getElementById('powbtn');
 const touchDev=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
 if(touchDev){
@@ -1269,6 +1392,7 @@ pad.querySelectorAll('[data-k]').forEach(b=>{
   b.addEventListener('contextmenu',e=>e.preventDefault());
 });
 document.getElementById('mapbtn').addEventListener('click',()=>{if(state==='play')showMap=!showMap});
+document.querySelectorAll('[data-pause]').forEach(b=>b.addEventListener('click',()=>{if(state==='play')pauseMenu()}));
 document.querySelectorAll('[data-map]').forEach(b=>b.addEventListener('click',()=>{if(state==='play')showMap=!showMap}));
 
 /* tela cheia: usa a de verdade quando o navegador deixa; senão ocupa a área toda da página */
@@ -1303,8 +1427,10 @@ function step(){
   if(stoneFlash>0)stoneFlash--;
   if(powerFlash>0)powerFlash--;
   if(P&&powBtn&&powBtn._r!==(P.fury>=1)){powBtn._r=P.fury>=1;powBtn.classList.toggle('ready',powBtn._r)}
-  if(state==='dead'){deadT--;updateParticles();if(deadT<=0){reset();state='play'}prev={...keys};for(const k in tapped)tapped[k]=false;return}
+  if(state==='dead'){deadT--;updateParticles();if(deadT<=0){reset();bossRespawn();state='play'}prev={...keys};for(const k in tapped)tapped[k]=false;return}
   if(state!=='play')return;
+  if(DEMO&&save.boss4Dead&&!rematch&&++demoT>240){demoEnd();return}
+  trackBossCp();
   if(hitstop>0){hitstop--;return}
   frames++;
   const ptx=P.x/TS,pty=P.y/TS;
@@ -1855,7 +1981,7 @@ function petrify(){
   P.stone=85;P.atk=null;P.plunge=false;P.queue=false;P.vx=0;stoneFlash=14;shake=6;sfx('stone');
   if(P.inv===0){P.hp--;P.inv=45;if(P.hp<=0)die()}
 }
-function die(){sfx('die');P.hp=0;P.stone=0;state='dead';deadT=100;showMap=false;burst(P.x+5,P.y+11,'#c8322a',30,3.5)}
+function die(){sfx('die');if(bossCp)bossCp.ok=!!(boss&&boss.kind===bossCp.kind&&boss.hp>0&&boss.state!=='sleep'&&Math.hypot(boss.x-P.x,boss.y-P.y)<26*TS);P.hp=0;P.stone=0;state='dead';deadT=100;showMap=false;burst(P.x+5,P.y+11,'#c8322a',30,3.5)}
 
 function patrol(e,speed,chase){
   const dx=(P.x+P.w/2)-(e.x+e.w/2),dy=Math.abs((P.y+P.h)-(e.y+e.h)),aggro=chase&&Math.abs(dx)<90&&dy<20;
@@ -2117,24 +2243,24 @@ function bossDeath(b){
   else if(b.kind==='clock'){B6=null;boss=null;setDoor6(false);if(bellOpen())setDoor4(false);scene(...MEMS[3],after(()=>say(bellOpen()?'A porta do sino se abriu':'Mais uma brasa acesa ('+emberCount()+' de 5)')))}
   else if(b.kind==='banner'){B7=null;boss=null;setDoor8(false);openPort();ents.forEach(e=>{if(e.summoned)e.dead=true});if(bellOpen())setDoor4(false);scene(...MEMS[4],after(()=>{say(bellOpen()?'A porta do sino se abriu':'Mais uma brasa acesa ('+emberCount()+' de 5)');giveWeapon('spear')}))}
   else if(b.kind==='weaver'){B8=null;boss=null;setDoor9(false);save.maxHp++;P.hp=maxHp();if(!save.taken.includes('pg4'))save.taken.push('pg4');setTrack('explore');updateAbil();persist();
-    showMsg({n:'Pergaminho: Lâmina Temperada',d:'No fundo da teia havia um pergaminho da guarda. Leve ao Damião, nas Ruínas. Junto dele, um Coração de Brasa: sua vida máxima aumentou em 1. (+20 cinzas)'})}
+    scene(...BOSS_MEMS.weaver,after(()=>showMsg({n:'Pergaminho: Lâmina Temperada',d:'No fundo da teia havia um pergaminho da guarda. Leve ao Damião, nas Ruínas. Junto dele, um Coração de Brasa: sua vida máxima aumentou em 1. (+20 cinzas)'})))}
   else if(b.kind==='widow'){B10=null;boss=null;setDoor10(false);setTrack('explore');scene(...MEMS[5],after(()=>giveCharm('lanterna')))}
   else if(b.kind==='colossus'){B11=null;boss=null;setDoor11(false);setTrack('explore');scene(...MEMS[6],after(()=>giveCharm('ferro')))}
-  else if(b.kind==='spirit'){B12=null;boss=null;setDoor12(false);for(let r=70;r<=77;r++)grid[r][71]='.';setTrack('explore');persist();say('A Brasa Viva se apagou · volte à Cássia')}
+  else if(b.kind==='spirit'){B12=null;boss=null;setDoor12(false);for(let r=70;r<=77;r++)grid[r][71]='.';setTrack('explore');persist();scene(...BOSS_MEMS.spirit,after(()=>say('A Brasa Viva se apagou · volte à Cássia')))}
   else if(b.kind==='jailer'){B13=null;boss=null;setDoor13(false);for(let r=70;r<=77;r++)grid[r][151]='.';ents.forEach(e=>{if(e.summoned)e.dead=true});save.maxHp++;P.hp=maxHp();setTrack('explore');
     scene(...MEMS[7],after(()=>showMsg({n:'Chave do Carcereiro',d:'Grom guardava um Coração de Brasa no molho de chaves: vida máxima +1. A leste, o Templo Submerso.'})))}
   else if(b.kind==='statue'){B14=null;boss=null;setDoor14(false);save.maxHp++;P.hp=maxHp();setTrack('explore');
     scene(...MEMS[8],after(()=>showMsg({n:'Coração de Mármore',d:'Vida máxima +1. No fundo do altar há um olho de bronze no muro, e o chão perto da água está rachado.'})))}
   else if(b.kind==='queen'){B15=null;boss=null;setDoor15(false);save.ab.glide=true;updateAbil();setTrack('explore');persist();
-    showMsg({n:'Asas de Pedra',d:'Segure pular enquanto cai para planar devagar. Agora o lago de fogo do santuário pode ser atravessado.'})}
+    scene(...BOSS_MEMS.queen,after(()=>showMsg({n:'Asas de Pedra',d:'Segure pular enquanto cai para planar devagar. Agora o lago de fogo do santuário pode ser atravessado.'})))}
   else if(b.kind==='tornado'){B16=null;boss=null;setDoor16(false);save.ab.fire=true;updateAbil();setTrack('explore');persist();
-    showMsg({n:'Flechas de Fogo',d:'Suas flechas carregadas agora queimam: causam +1 de dano e atravessam tudo.'})}
+    scene(...BOSS_MEMS.tornado,after(()=>showMsg({n:'Flechas de Fogo',d:'Suas flechas carregadas agora queimam: causam +1 de dano e atravessam tudo.'})))}
   else if(b.kind==='priest'){B17=null;boss=null;setDoor17(false);save.maxHp+=2;P.hp=maxHp();setTrack('explore');ents.forEach(e=>{if(e.summoned)e.dead=true});
     scene(...MEMS[9],after(()=>showMsg({n:'Coração da Cinza',d:'Vida máxima +2. Kalas caiu. A montanha perdeu a única voz que falava por ela.'})))}
   else if(b.kind==='glutton'){B22=null;boss=null;setDoor22(false);ents.forEach(e=>{if(e.summoned)e.dead=true});save.maxHp++;P.hp=maxHp();save.ash+=60;updateAbil();setTrack('explore');persist();
-    say('Vida máxima +1 · +60 cinzas');giveCharm('vampiro')}
+    scene(...BOSS_MEMS.glutton,after(()=>{say('Vida máxima +1 · +60 cinzas');giveCharm('vampiro')}))}
   else if(b.kind==='automaton'){B23=null;boss=null;setDoor23(false);save.slots=Math.min(6,save.slots+1);updateAbil();setTrack('explore');persist();
-    say('Mais um espaço de amuleto');giveCharm('agil')}
+    scene(...BOSS_MEMS.automaton,after(()=>{say('Mais um espaço de amuleto');giveCharm('agil')}))}
   else if(b.kind==='digger'){B18=null;boss=null;setDoor18(false);setDreamExit(1,true);ents.forEach(e=>{if(e.summoned)e.dead=true});setTrack('explore');
     scene(...DREAM_MEMS[0],after(()=>giveWeapon('shovel')))}
   else if(b.kind==='fever'){B19=null;boss=null;setDoor19(false);setDreamExit(2,true);ents.forEach(e=>{if(e.summoned)e.dead=true});setTrack('explore');
@@ -2147,7 +2273,7 @@ function bossDeath(b){
   else if(b.kind==='maestro'){B25=null;boss=null;setDoor25(false);ents.forEach(e=>{if(e.summoned)e.dead=true});save.flags.telmaEnd=1;TF.on=false;telShots=[];setTrack(null);persist();scene('Os onze versos',FINAL_END,victory)}
   else if(b.kind==='heart'){B9=null;boss=null;setTrack(null);persist();scene(endingTitle(),endingLines(),victory)}
   else if(b.kind==='beast'){B5=null;boss=null;setDoor5(false);save.maxHp++;P.hp=maxHp();save.ab.beast=true;updateAbil();setTrack('explore');persist();
-    showMsg({n:'Chifre da Besta',d:'Sua vida máxima aumentou em 1. A Erupção ficou maior e mais forte. (+20 cinzas)'})}
+    scene(...BOSS_MEMS.beast,after(()=>showMsg({n:'Chifre da Besta',d:'Sua vida máxima aumentou em 1. A Erupção ficou maior e mais forte. (+20 cinzas)'})))}
   else if(b.kind==='cerb'){B3=null;boss=null;setDoor3(false);if(bellOpen())setDoor4(false);else sealBell();
     scene(...MEMS[2],after(()=>say(bellOpen()?'O sino está logo ali':'A porta do sino pede cinco brasas ('+emberCount()+' de 5)')))}
   else if(b.kind==='ares'){B4=null;boss=null;setTrack(null);scene('O fundo da montanha',PRE_HEART,enterHeart)}
@@ -2268,6 +2394,7 @@ function altarMenu(){
     <p>Vida ${P.hp}/${maxHp()} · frascos ${P.flasks}/${save.flaskMax} · ${save.bronze} bronze · ${save.ash} cinzas · ecos ${ecoCount()}/${ECOS.length}</p>
     <div class="techs">
       <button class="btn" data-go="rest">Descansar</button>
+      <button class="btn" data-go="altarsave">Salvar jogo</button>
       <button class="btn" data-go="forge"${metBronte()?'':' disabled'}>Forja do Bronte${metBronte()?'':' (encontre o fundidor na Fundição)'}</button>
       <button class="btn" data-go="charms"${save.charms.length?'':' disabled'}>Amuletos (${slotsUsed()}/${save.slots})</button>
       <button class="btn" data-go="weapons">Armas (${save.weapons.length+(save.ab.bow?1:0)})</button>
@@ -2342,7 +2469,7 @@ function drawTravelMap(tok){
     c.setLineDash([4,4]);c.strokeStyle='rgba(255,222,90,.7)';c.beginPath();c.moveTo(Math.floor(P.x/TS)*2+1,Math.floor(P.y/TS)*2+1);c.lineTo(x,y);c.stroke();c.setLineDash([])}
   requestAnimationFrame(()=>drawTravelMap(tok));
 }
-function travelTo(i){const s=STATUES[i];save.cp={x:s.x,y:s.y};persist();reset();P.onStatue=i;state='play';scr.hidden=true;sfx('altar');say(zoneAt(s.x,s.y))}
+function travelTo(i){const s=STATUES[i];save.cp={x:s.x,y:s.y};bossCp=null;persist();reset();P.onStatue=i;state='play';scr.hidden=true;sfx('altar');say(zoneAt(s.x,s.y))}
 function restAtAltar(){const i=P.onStatue;persist();reset();if(i>=0)P.onStatue=i;state='play';scr.hidden=true;sfx('altar');say('Você descansou · os mortos voltaram')}
 
 /* ===== Provas do sargento Brás (arena no Pátio do Estandarte) ===== */
@@ -3170,7 +3297,7 @@ function updateItems(){
 function updateStatues(){
   statues.forEach((s,i)=>{
     if(overlap(P,s)){
-      if(P.onStatue!==i){P.onStatue=i;save.cp={x:s.tx,y:s.ty};P.hp=maxHp();P.flasks=save.flaskMax;if(save.ab.bow)P.arrows=Math.max(P.arrows,Math.min(ALTAR_MIN_ARROWS,save.arrowsMax));altarRumor();if(!save.lit.includes(i))save.lit.push(i);if(!hints.altarMenu){hints.altarMenu=1;setTimeout(()=>say(touchDev?'Baixo no altar: forja, amuletos e viagem':'Baixo (ou E) no altar: forja, amuletos e viagem'),2800)}if(save.flags.ward)P.ward=1;say('Altar aceso · vida restaurada · jogo salvo');sfx('altar');burst(s.x+6,s.y,'#ff8a3a',14,2,true);persist()}
+      if(P.onStatue!==i){P.onStatue=i;save.cp={x:s.tx,y:s.ty};bossCp=null;P.hp=maxHp();P.flasks=save.flaskMax;if(save.ab.bow)P.arrows=Math.max(P.arrows,Math.min(ALTAR_MIN_ARROWS,save.arrowsMax));altarRumor();if(!save.lit.includes(i))save.lit.push(i);if(!hints.altarMenu){hints.altarMenu=1;setTimeout(()=>say(touchDev?'Baixo no altar: forja, amuletos e viagem':'Baixo (ou E) no altar: forja, amuletos e viagem'),2800)}if(save.flags.ward)P.ward=1;say('Altar aceso · vida restaurada · jogo salvo');sfx('altar');burst(s.x+6,s.y,'#ff8a3a',14,2,true);persist()}
     }else if(P.onStatue===i)P.onStatue=-1;
   });
 }
@@ -5146,7 +5273,7 @@ function render(){
   ctx.setTransform(RS,0,0,RS,0,0);ctx.imageSmoothingEnabled=false;
   if(!grid){ctx.fillStyle='#120c0e';ctx.fillRect(0,0,VW,VH);return}
   if(state==='scene'){cam.x+=Math.sin(Date.now()/2600)*.18;cam.y+=Math.cos(Date.now()/3400)*.06;clampCam()}
-  const sx=shake?(Math.random()-.5)*shake:0,sy=shake?(Math.random()-.5)*shake:0;
+  const sk=SHAKE_ON?shake:0,sx=sk?(Math.random()-.5)*sk:0,sy=sk?(Math.random()-.5)*sk:0;
   // câmera anda em frações de pixel quando a tela é grande (rolagem mais suave)
   const cx=snap(cam.x+sx),cy=snap(cam.y+sy);
   drawBg(cx,cy);
@@ -5165,16 +5292,16 @@ function render(){
 }
 
 /* ---------- som (tudo sintetizado com Web Audio) ---------- */
-const AU={ctx:null,musicOn:true,sfxOn:true,track:null,next:0,step:0,filt:null};
-try{const v=JSON.parse(localStorage.getItem('cinzas-som')||'{}');if(v.m===false)AU.musicOn=false;if(v.s===false)AU.sfxOn=false}catch(_){}
+const AU={ctx:null,musicOn:true,sfxOn:true,vm:1,vs:1,track:null,next:0,step:0,filt:null};
+try{const v=JSON.parse(localStorage.getItem('cinzas-som')||'{}');if(v.m===false)AU.musicOn=false;if(v.s===false)AU.sfxOn=false;if(v.vm>=0)AU.vm=Math.min(1,v.vm);if(v.vs>=0)AU.vs=Math.min(1,v.vs)}catch(_){}
 function audioInit(){
   if(AU.ctx){if(AU.ctx.state==='suspended')AU.ctx.resume();return}
   const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
   const c=AU.ctx=new C();
   AU.master=c.createGain();AU.master.gain.value=.8;AU.master.connect(c.destination);
-  AU.sfxBus=c.createGain();AU.sfxBus.gain.value=AU.sfxOn?.7:0;AU.sfxBus.connect(AU.master);
+  AU.sfxBus=c.createGain();AU.sfxBus.gain.value=AU.sfxOn?.7*AU.vs:0;AU.sfxBus.connect(AU.master);
   AU.musFilter=c.createBiquadFilter();AU.musFilter.type='lowpass';AU.musFilter.frequency.value=7000;AU.musFilter.connect(AU.master);
-  AU.mus=c.createGain();AU.mus.gain.value=AU.musicOn?.4:0;AU.mus.connect(AU.musFilter);
+  AU.mus=c.createGain();AU.mus.gain.value=AU.musicOn?.4*AU.vm:0;AU.mus.connect(AU.musFilter);
   const len=c.sampleRate;AU.noise=c.createBuffer(1,len,c.sampleRate);const d=AU.noise.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
   setInterval(schedule,25);
 }
@@ -5279,8 +5406,8 @@ function setFilter(fq){if(!AU.ctx||AU.filt===fq)return;AU.filt=fq;AU.musFilter.f
 const musBtn=document.getElementById('musbtn'),sfxBtn=document.getElementById('sfxbtn');
 function soundUi(){
   musBtn.textContent='Música: '+(AU.musicOn?'ligada':'desligada');sfxBtn.textContent='Efeitos: '+(AU.sfxOn?'ligados':'desligados');
-  if(AU.ctx){AU.mus.gain.value=AU.musicOn?.4:0;AU.sfxBus.gain.value=AU.sfxOn?.7:0}
-  try{localStorage.setItem('cinzas-som',JSON.stringify({m:AU.musicOn,s:AU.sfxOn}))}catch(_){}
+  if(AU.ctx){AU.mus.gain.value=AU.musicOn?.4*AU.vm:0;AU.sfxBus.gain.value=AU.sfxOn?.7*AU.vs:0}
+  try{localStorage.setItem('cinzas-som',JSON.stringify({m:AU.musicOn,s:AU.sfxOn,vm:AU.vm,vs:AU.vs}))}catch(_){}
 }
 const gfxBtn=document.getElementById('gfxbtn');
 function gfxUi(){gfxBtn.textContent='Gráficos: '+(GFX==='alto'?'nítidos':'leves')}
@@ -5307,9 +5434,16 @@ function slotAsk(kind,n){
   screen(kind==='new'?`<span class="eyebrow">Espaço ${n}</span><h2>Começar do zero aqui?</h2><p>O jogo deste espaço (${what}) vai ser apagado. Os outros espaços não mudam.</p><div class="row"><button class="btn" data-go="start" data-t="${n}">Começar</button><button class="ghostbtn" data-go="title">Cancelar</button></div>`
     :`<span class="eyebrow">Espaço ${n}</span><h2>Apagar este jogo?</h2><p>${what}. Não dá para desfazer (a não ser que você tenha exportado o save).</p><div class="row"><button class="btn" data-go="del" data-t="${n}">Apagar</button><button class="ghostbtn" data-go="title">Cancelar</button></div>`);
 }
+let demoT=0;
+function demoEnd(){
+  demoT=0;state='win';persist();setTrack(null);sfx('pickup');
+  screen(`<span class="eyebrow">Fim da demo</span><h2>O sino calou</h2><p>Você descobriu quem tocava o sino. Mas a noite não acabou: o coração da montanha ainda bate.</p>
+  <p>O jogo completo continua com mais chefes, o Submundo, o Sonho da Montanha e a história da Telma.</p><p>Obrigado por jogar!</p>
+  <button class="btn" data-go="demoend">Voltar ao título</button>`);
+}
 function titleScreen(){
   state='title';
-  screen(`<span class="eyebrow">Um metroidvania sobre uma noite que nunca acaba</span><img class="logo" src="${LOGO}" alt=""><h2 class="sr">Cinzas do Olimpo</h2>
+  screen(`<span class="eyebrow">${DEMO?'Demo · ':''}Um metroidvania sobre uma noite que nunca acaba</span><img class="logo" src="${LOGO}" alt=""><h2 class="sr">Cinzas do Olimpo</h2>
   <p>Há dez anos o sol não nasce na cidade de Olimpo. Toda noite o sino toca três vezes e os mortos se levantam da cinza. Você é o último coveiro, e esta noite vai descobrir quem toca o sino.</p>
   <div class="techs">${slotsHtml()}</div>
   ${creatorSlot()?'<div class="row"><button class="ghostbtn" data-go="slot">Carregar save do criador ('+slotDate(creatorSlot())+')</button></div>':''}
@@ -5508,10 +5642,16 @@ panel.addEventListener('click',e=>{
     if(!save.flags.prologo){save.flags.prologo=1;persist();scene('Olimpo, dez anos depois',INTRO,()=>say(z))}else say(z)}}
   if(b.dataset.go==='resume'){state='play';scr.hidden=true}
   const g=b.dataset.go,t=b.dataset.t;
+  // quando o mesmo menu é redesenhado (trocar opção, tecla...), o foco fica no botão que foi apertado
+  if(/^(o_|bind|keysdef|equip|buy|wpick|pick|shop)/.test(g))setTimeout(()=>{const n=panel.querySelector(`[data-go="${g}"]`+(t?`[data-t="${t}"]`:''));if(n&&n!==b)menuFocus(n)},0);
   if(g==='weapons')weaponsMenu();if(g==='ecos')ecosMenu();if(g==='lore')loreMenu();if(g==='wpick'){const o=save.weapon;if(o!==t&&save.weapons.includes(t)){save.weapon=t;startSwap(o);updateAbil();persist()}weaponsMenu()}
   if(g==='creator')creatorAsk();if(g==='creatorgo')loadCreatorSave();if(g==='backup')restoreBackup();if(g==='creatoroff'){setCreatorMode(false);titleScreen()}
   if(g==='export')exportSave();if(g==='import')importSave();if(g==='slot')loadCreatorSlot();if(g==='slotsave')saveCreatorSlot();
   if(g==='ach')achMenu(state==='title'?'title':'altar');if(g==='title')titleScreen();if(g==='bosses')bossMenu();if(g==='rematch')startRematch(t);
+  if(g==='pause')pauseMenu();if(g==='altarsave'){persist();sfx('altar');altarMenu();panel.insertAdjacentHTML('afterbegin','<p class="credit">Jogo salvo · '+fmtWhen(Date.now())+'</p>')}if(g==='quitask')quitAsk();if(g==='quit')quitToTitle();if(g==='opts')optsMenu();if(g==='keys')keysMenu();
+  if(g==='bind')keysMenu(t);if(g==='keysdef'){KEYMAP={...KEYMAP_DEF};saveKeymap();keysMenu()}
+  if(g==='o_fs'){toggleFs().then(()=>{if(state==='msg')optsMenu()})}if(g==='o_gfx'){gfxBtn.click();optsMenu()}if(g==='o_shake'){SHAKE_ON=!SHAKE_ON;try{localStorage.setItem('cinzas-tremor',SHAKE_ON?'1':'0')}catch(_){}optsMenu()}
+  if(g==='demoend')titleScreen();
   if(g==='rest')restAtAltar();if(g==='forge')forgeMenu();if(g==='charms')charmMenu();if(g==='travel')travelMenu();if(g==='altar')altarMenu();
   if(g==='buy')buyForge(t);if(g==='equip')toggleCharm(t);if(g==='go')travelTo(+t);if(g==='ctp')creatorTp(+t);if(g==='pick')travelMenu(+t);if(g==='trial')startTrial(+t);if(g==='shop')buyShop(t);if(g==='ngplus')newNightPlus();
   if(b.dataset.go==='learn'){const t=TECHS.find(x=>x.id===b.dataset.t);
@@ -5524,7 +5664,78 @@ function continueFrom(s){
   else if(typeof s.seenStr==='string'&&s.seenStr.length%H===0&&s.seenStr.length<W*H){const ow=s.seenStr.length/H;for(let y=0;y<H;y++)for(let x=0;x<ow;x++)seen[y*W+x]=s.seenStr.charCodeAt(y*ow+x)===49?1:0}
   if([12,13,14,15,16,17].some(i=>save['boss'+i+'Dead']))save.flags.under=1; // saves de antes da marcação do Submundo
   delete save.seenStr;hints={};frames=0;reset();updateAbil();state='play';scr.hidden=true;
+  delete save.pos;bossCp=null;
 }
+
+/* ===================== Pausa: opções, teclas ===================== */
+// o jogo só salva nos altares; o checkpoint de chefe vale só para a luta
+const lastAltar=()=>zoneAt(save.cp.x,save.cp.y);
+function pauseMenu(){
+  showMap=false;
+  menuOpen(`<span class="eyebrow">${zoneAt(Math.floor(P.x/TS),Math.floor(P.y/TS))} · nível ${save.lv||1}</span><h2>Pausado</h2>
+    <p class="credit">O jogo salva nos altares · último: ${lastAltar()}${bossCp?' · checkpoint do chefe ativo':''}</p>
+    <div class="techs" style="justify-items:stretch;max-width:30ch">
+      <button class="btn" data-go="resume">Continuar</button>
+      <button class="btn" data-go="opts">Opções</button>
+      <button class="btn" data-go="keys">Teclas e controle</button>
+      <button class="ghostbtn" data-go="quitask">Sair para o título</button></div>`);
+}
+function quitAsk(){
+  menuOpen(`<span class="eyebrow">Sair para o título</span><h2>Sair agora?</h2><p>Você vai continuar do último altar (${lastAltar()}). O que já pegou continua com você.</p>
+    <div class="row"><button class="btn" data-go="quit">Sair</button><button class="ghostbtn" data-go="pause">Cancelar</button></div>`);
+}
+function quitToTitle(){bossCp=null;persist();setTrack(null);titleScreen()}
+/* checkpoint de chefe: quando a luta começa, guarda um ponto seguro de uns segundos antes (fora da arena).
+   Morrendo na luta, volta ali com vida e frascos cheios em vez de voltar para o altar */
+let bossCp=null;const safeHist=[];
+function preBossThought(){
+  if(!boss||boss.state!=='sleep'||trial||rematch||thought||!PRE_BOSS[boss.kind])return;
+  const pre=save.flags.pre||{};if(pre[boss.kind])return;
+  if(Math.abs(P.x+P.w/2-(boss.x+boss.w/2))<13*TS&&Math.abs(P.y+P.h-(boss.y+boss.h))<5*TS){
+    save.flags.pre=Object.assign({},pre,{[boss.kind]:1});thought={txt:PRE_BOSS[boss.kind],t:330,wait:70}}
+}
+function trackBossCp(){
+  preBossThought();
+  if(frames%30===0&&P.ground&&P.safe){safeHist.push({x:P.safe.x,y:P.safe.y});if(safeHist.length>8)safeHist.shift()}
+  if(trial||rematch||!boss)return;
+  if(bossCp&&bossCp.kind===boss.kind&&(boss.state==='dead'||boss.hp<=0)){bossCp=null;return}
+  if(boss.hp>0&&boss.state!=='sleep'&&boss.state!=='dead'&&(!bossCp||bossCp.kind!==boss.kind)){
+    const p=safeHist[0]||P.safe||{x:P.x,y:P.y};bossCp={x:p.x,y:p.y,kind:boss.kind,name:boss.name}}
+}
+function bossRespawn(){
+  if(!bossCp)return;
+  // só vale para quem morreu na luta; morrendo longe dali, volta para o altar
+  if(!bossCp.ok||save[KIND_KEY[bossCp.kind]]){bossCp=null;return}
+  P.x=bossCp.x;P.y=bossCp.y;P.safe={x:P.x,y:P.y};safeHist.length=0;cam.x=P.x-VW/2;cam.y=P.y-VH/2;clampCam();
+  say('De volta ao checkpoint · '+cap(bossCp.name||''));
+}
+let SHAKE_ON=true;try{SHAKE_ON=localStorage.getItem('cinzas-tremor')!=='0'}catch(_){}
+function optsMenu(){
+  const fs=!!realFs()||fakeFs;
+  menuOpen(`<span class="eyebrow">Pausa</span><h2>Opções</h2>
+    <div class="techs" style="max-width:38ch">
+      <label class="tech"><b>Música · <span id="vmv">${Math.round(AU.vm*100)}%</span></b><input type="range" min="0" max="100" step="5" value="${Math.round(AU.vm*100)}" data-vol="m"></label>
+      <label class="tech"><b>Efeitos · <span id="vsv">${Math.round(AU.vs*100)}%</span></b><input type="range" min="0" max="100" step="5" value="${Math.round(AU.vs*100)}" data-vol="s"></label>
+      <button class="btn sm wide" data-go="o_fs">Tela cheia: ${fs?'ligada':'desligada'}</button>
+      <button class="btn sm wide" data-go="o_gfx">Gráficos: ${GFX==='alto'?'nítidos':'leves (para PC fraco)'}</button>
+      <button class="btn sm wide" data-go="o_shake">Tremor da tela: ${SHAKE_ON?'ligado':'desligado'}</button>
+      <button class="btn sm wide" data-go="keys">Teclas e controle</button></div>
+    <button class="btn" data-go="pause" data-back>Voltar</button>`);
+}
+const PAD_NAMES=[['A / ✕','Pular'],['X / ▢','Atacar'],['B / ◯ ou RT / R2','Investida'],['Y / △','Tiro'],['LB / L1','Trocar arma'],['RB / R1','Poder'],['LT / L2','Cura'],['Direcional ou analógico','Mover · baixo interage'],['Start','Pausa'],['Select / Share','Mapa']];
+function keysMenu(waitFor){
+  rebinding=waitFor||null;
+  const rows=ACTIONS.map(([a,n])=>`<div class="tech" style="grid-template-columns:1fr auto;align-items:center"><b>${n}</b><button class="btn sm" data-go="bind" data-t="${a}">${rebinding===a?'Aperte uma tecla…':keysOf(a).map(keyName).join(' · ')||'—'}</button></div>`).join('');
+  menuOpen(`<span class="eyebrow">Teclas e controle</span><h2>${rebinding?'Aperte a nova tecla':'Teclas'}</h2>
+    <p class="credit">${rebinding?'Esc cancela.':'Clique numa ação e aperte a tecla nova. Fixas: Esc/P pausa, M mapa, F tela cheia.'}</p>
+    <div class="techs">${rows}</div>
+    <h2 style="font-size:1.2rem">Controle</h2>
+    <div class="techs">${PAD_NAMES.map(([b,n])=>`<div class="tech" style="grid-template-columns:1fr auto"><b>${n}</b><em>${b}</em></div>`).join('')}</div>
+    <div class="row"><button class="ghostbtn" data-go="keysdef">Voltar ao padrão</button><button class="btn" data-go="opts" data-back>Voltar</button></div>`);
+}
+panel.addEventListener('input',e=>{const r=e.target.closest('[data-vol]');if(!r)return;audioInit();const v=+r.value/100;
+  if(r.dataset.vol==='m'){AU.vm=v;AU.musicOn=v>0;document.getElementById('vmv').textContent=r.value+'%'}else{AU.vs=v;AU.sfxOn=v>0;document.getElementById('vsv').textContent=r.value+'%';sfx('swing',1)}
+  soundUi()});
 
 /* ===================== O MISTÉRIO: os Ecos e o homem de manto ===================== */
 // Bilhetes escritos pelo próprio Teo em noites que ele esqueceu. Juntos, contam quem realmente segura a noite.
@@ -6031,7 +6242,7 @@ Object.assign(LINES,{
 NPCS.push(
   {id:'cassia',name:'Cássia, a caçadora',x:8,y:77,st:()=>save.boss12Dead?(save.flags.cassiaR?2:1):0},
   {id:'heitor',name:'Heitor, o guarda preso',x:98,y:77,st:()=>save.flags.heitor?1:0},
-  {id:'caio',name:'Irmão Caio, que fugiu do culto',x:186,y:97,st:()=>save.boss17Dead?1:0},
+  {id:'caio',name:'Irmão Caio, que fugiu do culto',x:186,y:97,st:()=>save.boss17Dead?4:save.boss16Dead?3:save.boss15Dead?2:save.boss14Dead?1:0},
 );
 Object.assign(NPC_SPR,{cassia:'npcWoman',heitor:'npcOld',caio:'gCult'});
 Object.assign(NPC_VAR,{cassia:'warm',heitor:'steel'});
@@ -6077,6 +6288,37 @@ LINES.odete[0].push('Mais uma coisa: o chão perto da minha ilhota, aqui embaixo
 LINES.mira[3].splice(LINES.mira[3].length-1,0,'A irmã Odete, do pântano, diz que debaixo da ilhota dela tem raízes e uma caçadora viva. E um manto vermelho que ninguém vê de perto.');
 LINES.odete[1].push('O chão rachado perto da ilhota ainda leva às raízes. Lá embaixo, o culto escondia a casa dele.');
 LINES.caio[1].push('Depois que o Kalas caiu, a parede do trono começou a respirar. Tem uma fenda lá. Eu não tenho coragem de entrar.');
+// entre a estátua, a gárgula, o redemoinho e o Kalas, o Caio conta um pedaço do culto de cada vez
+LINES.caio.splice(1,0,
+  ['Você derrubou a deusa de mármore? A Ilía fez aquela estátua quando ainda era aprendiz. O Kalas encheu de brasa por dentro.',
+   'No culto a gente aprendia que a montanha é uma deusa com fome. Que dar os mortos para ela era caridade.',
+   'Eu acreditei por seis anos. Até o dia em que ele mandou buscar as crianças que cantavam bem.'],
+  ['As gárgulas calaram. Eu ainda acordo achando que ouço as asas.',
+   'As crianças que cantavam bem... os Mantos Rubros levavam para um convento, lá no alto. O Kalas dizia que era para aprenderem com o Maestro.',
+   'Eu nunca vi nenhuma voltar. Uma delas tinha uma fita cor-de-rosa no cabelo. Cantava baixinho o tempo todo.'],
+  ['Você passou pelo redemoinho. Então só falta ele.',
+   'O Kalas acende uma vela para cada morto que a montanha come. Ele chama isso de contabilidade.',
+   'Quando você chegar, ele vai dizer que conhece você. Que conhece o seu pai. É verdade. E não muda nada.',
+   'Toma. Roubei do altar dele quando fugi. Achei que um dia alguém ia precisar mais do que eu.']);
+Object.assign(TALK_DONE,{caio:st=>{if(st===3&&!save.flags.caioG){save.flags.caioG=1;save.bronze+=2;save.ash+=40;updateAbil();persist();sfx('pickup');
+  showMsg({n:'O roubo do irmão Caio',d:'2 fragmentos de bronze e 40 cinzas do altar de Kalas.'})}}});
+// no sonho, a montanha mostra a menina das catacumbas do jeito que ela era naquela noite
+NPCS.push({id:'miradream',name:'Mira, aos seis anos',x:452,y:83,kid:true,ghost:true,when:()=>save.boss18Dead,st:()=>save.boss20Dead?2:save.boss19Dead?1:0});
+Object.assign(NPC_SPR,{miradream:'npcWoman'});Object.assign(NPC_VAR,{miradream:'violet'});
+if(PORT_IMG.mira)PORT_IMG.miradream=PORT_IMG.mira;
+Object.assign(BARKS,{miradream:[['O teto tá rangendo.','Moço?','Não solto o livro.']]});
+Object.assign(LINES,{miradream:[
+  ['Moço? Você é o coveiro? O teto tá rangendo.',
+   'Eu tô com o livro do meu avô. Ele disse pra eu nunca soltar, nem se tudo cair.',
+   'Se o teto cair, você me empurra pra fora? Promete?',
+   '(Teo promete. Ele já cumpriu essa promessa uma vez.)'],
+  ['Lá fora eu cresci, sabia? Aqui dentro eu sempre tenho seis anos.',
+   'A montanha guarda as coisas assim: do jeito que estavam na hora que doeram.',
+   'No livro tem uma página com o seu nome. Eu ainda não sei ler. Lê pra mim?',
+   '(Teo não lê. Ele fecha o livro devagar e devolve.)'],
+  ['Eu lembrei da mão. A que me empurrou. Era quente.',
+   'Lá fora a Mira grande já sabe de quem era. Aqui dentro eu fiquei esperando pra te dizer obrigada.',
+   'Agora pode ir. Lá em cima a montanha tá com medo. Diz o nome dela bem alto, tá? Ninguém nunca disse.']]});
 Object.assign(CHARMS,{
   aljava:{n:'Aljava Encantada',c:1,d:'Recupera 1 flecha a cada 4 golpes de perto, em vez de 7.'},
   olho:{n:'Olho da Caçadora',c:1,d:'A flecha carregada fica pronta na metade do tempo.'},
@@ -6662,6 +6904,7 @@ let acc=0,last=performance.now();
 let fitT=0;
 function loop(now){
   if((fitT++)%30===0)fitRes();
+  try{pollPad()}catch(_){}
   acc+=Math.min(100,now-last);last=now;
   while(acc>=1000/60){step();acc-=1000/60}
   render();requestAnimationFrame(loop);

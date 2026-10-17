@@ -48,5 +48,5 @@
  // passo do eco
  fresh();save.ab.echo=true;put(10,21);run(5);P.dashT=10;P.dfx=0;const p0=pshots.length;run(1);ok(pshots.length>p0,'investida deixa um eco que explode');
  // gente do sonho
- ok(LINES.teokid.length===4&&LINES.euridice.length===2&&LINES.caio[1].some(l=>l.includes('fenda')),'Teo criança, Eurídice e a pista do Caio');
+ ok(LINES.teokid.length===4&&LINES.euridice.length===2&&LINES.caio[LINES.caio.length-1].some(l=>l.includes('fenda')),'Teo criança, Eurídice e a pista do Caio');
  console.log(fails?fails+' FALHA(S)':'TUDO OK');setTimeout(()=>process.exit(fails?1:0),50)})();

@@ -1,6 +1,8 @@
-﻿param([string]$Src,[string]$Out)
+﻿param([string]$Src,[string]$Out,[switch]$Demo)
 New-Item -ItemType Directory -Force $Out | Out-Null
 $body = [IO.File]::ReadAllText($Src)
+# versão demo: mesmo jogo, termina depois de Andros e usa saves separados
+if($Demo){ if($body.IndexOf("const DEMO=false;") -lt 0){ throw "DEMO flag not found" }; $body = $body.Replace("const DEMO=false;","const DEMO=true;") }
 $head = @'
 <!doctype html>
 <html lang="pt-BR">
@@ -49,7 +51,7 @@ $manifest = @'
 [IO.File]::WriteAllText((Join-Path $Out 'manifest.json'), $manifest, (New-Object Text.UTF8Encoding $false))
 
 $sw = @'
-const C='cinzas-v14';
+const C='cinzas-v15';
 self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(['./','index.html','manifest.json','icon-192.png','icon-512.png']))));
 self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).then(r=>{const cp=r.clone();caches.open(C).then(c=>c.put(e.request,cp)).catch(()=>{});return r}).catch(()=>caches.match(e.request))));
 '@
