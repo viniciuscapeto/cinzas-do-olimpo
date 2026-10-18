@@ -2640,12 +2640,12 @@ function drawBowHeld(){
       else{ctx.fillStyle='#c8c0b0';ctx.fillRect(Math.min(px,px+f*14),py,14,1)}
       glow(px+f*15,py,ready?9:5,save.ab.fire?'255,150,40':'255,120,40',ready?.55:.25);
       drawFist(px,py,0,true)}
-    if(!heroHandOver(x,y,st))drawFist(bx,by,-Math.PI/2);
+    drawGrip(bx,by,-Math.PI/2,st);
     bowRunes(bx,by);return}
   // descanso: o arco de pé na mão, um pouco inclinado
   const ang=.08+Math.sin(frames*.06)*.03;bowAt(h.x+f*1.5,h.y,ang);
   const t0=tip(h.x+f*1.5,h.y,ang,-1),t1=tip(h.x+f*1.5,h.y,ang,1);line([t0,t1],'rgba(220,210,190,.8)',.6);
-  if(!heroHandOver(x,y,st))drawFist(h.x,h.y,ang-Math.PI/2);bowRunes(h.x,h.y);
+  drawGrip(h.x,h.y,ang-Math.PI/2,st);bowRunes(h.x,h.y);
 }
 /* ---------- chefes do submundo ---------- */
 function mkSpirit(){return{kind:'spirit',name:'BRASA VIVA',x:64*TS,y:78*TS-50,w:34,h:50,hp:70,max:70,state:'sleep',t:0,dir:-1,vx:0,vy:0,flash:0,n:0,ph:0}}
@@ -3805,17 +3805,34 @@ function drawAtmosphere(cx){
   ctx.globalCompositeOperation='soft-light';ctx.globalAlpha=.3;ctx.fillStyle=tint;ctx.fillRect(0,0,VW,VH);
   ctx.restore();
 }
+/* volume do cenário: sombra suave onde o ar encosta na rocha (cantos, teto, pé da parede) e luz no topo dos blocos.
+   São degradês prontos de 16x16 (feitos uma vez) desenhados por cima de cada bloco */
+let AO=null;
+function aoTiles(){
+  if(AO||typeof Image==='undefined')return AO;
+  const mk=(x0,y0,x1,y1,stops)=>{const c=document.createElement('canvas');c.width=c.height=16;const g=c.getContext('2d'),gr=g.createLinearGradient(x0,y0,x1,y1);
+    for(const [o,col] of stops)gr.addColorStop(o,col);g.fillStyle=gr;g.fillRect(0,0,16,16);return c};
+  const sh=a=>[[0,'rgba(4,2,4,'+a+')'],[1,'rgba(4,2,4,0)']];
+  AO={L:mk(0,0,10,0,sh(.42)),R:mk(16,0,6,0,sh(.42)),T:mk(0,0,0,14,sh(.55)),B:mk(0,16,0,10,sh(.34)),
+    top:mk(0,0,0,16,[[0,'rgba(255,230,200,.2)'],[.35,'rgba(255,230,200,0)'],[1,'rgba(4,2,4,.14)']])};
+  return AO;
+}
 function drawTiles(cx,cy){
-  const x0=Math.max(0,Math.floor(cx/TS)),y0=Math.max(0,Math.floor(cy/TS));
+  const x0=Math.max(0,Math.floor(cx/TS)),y0=Math.max(0,Math.floor(cy/TS)),ao=aoTiles();
   for(let ty=y0;ty<=y0+12&&ty<H;ty++)for(let tx=x0;tx<=x0+20&&tx<W;tx++){
-    const c=grid[ty][tx];if(c==='.')continue;
+    const c=grid[ty][tx];
+    if(c==='.'){if(ao){const x=tx*TS,y=ty*TS;if(solid(tile(tx-1,ty)))ctx.drawImage(ao.L,x,y);if(solid(tile(tx+1,ty)))ctx.drawImage(ao.R,x,y);
+      if(solid(tile(tx,ty-1)))ctx.drawImage(ao.T,x,y);if(solid(tile(tx,ty+1)))ctx.drawImage(ao.B,x,y)}continue}
     const x=tx*TS,y=ty*TS,k=palKey(tx,ty),p=PALS[k],h=hash(tx,ty);
     if(c==='#'){
       ctx.drawImage(TILES[k][h%4],x,y);
       // profundidade: rocha que não encosta no ar fica mais escura e as bordas se destacam
       {const sl=solid(tile(tx-1,ty)),sr=solid(tile(tx+1,ty)),su=solid(tile(tx,ty-1)),sd=solid(tile(tx,ty+1));
-        if(sl&&sr&&su&&sd){const deep=solid(tile(tx-2,ty))&&solid(tile(tx+2,ty))&&solid(tile(tx,ty-2))&&solid(tile(tx,ty+2));ctx.fillStyle=deep?'rgba(6,4,6,.6)':'rgba(6,4,6,.32)';ctx.fillRect(x,y,16,16)}
-        else{ctx.fillStyle='rgba(255,225,190,.05)';ctx.fillRect(x,y,16,16)}}
+        // quanto mais longe do ar, mais escura a rocha (em degraus pequenos, para não virar um bloco preto de repente)
+        if(sl&&sr&&su&&sd){let d=1;for(let k=2;k<=4;k++){if(solid(tile(tx-k,ty))&&solid(tile(tx+k,ty))&&solid(tile(tx,ty-k))&&solid(tile(tx,ty+k)))d=k;else break}
+          ctx.fillStyle='rgba(6,4,6,'+[0,.2,.36,.5,.62][d]+')';ctx.fillRect(x,y,16,16)}
+        else{ctx.fillStyle='rgba(255,225,190,.05)';ctx.fillRect(x,y,16,16)}
+        if(!su&&ao)ctx.drawImage(ao.top,x,y)}
       const up=tile(tx,ty-1),dn=tile(tx,ty+1);
       if(!solid(tile(tx-1,ty))){ctx.fillStyle=p.dk;ctx.fillRect(x,y,1,16)}
       if(!solid(tile(tx+1,ty))){ctx.fillStyle=p.dk;ctx.fillRect(x+15,y,1,16)}
@@ -4085,9 +4102,41 @@ function drawHeldMelee(id,p,x,y,st){
     if(P.atk){P.wHist=P.wHist||[];for(let i=0;i<P.wHist.length;i++){const w=P.wHist[i];ctx.globalAlpha=.1+.08*i;drawWeapon(id,w.x,w.y,w.a,P.face,st)}ctx.globalAlpha=1;
       P.wHist.push({x:gx,y:gy,a:ang});if(P.wHist.length>3)P.wHist.shift()}else P.wHist=null}
   drawWeapon(id,gx,gy,ang,P.face,st);
-  // a própria mão do Teo (do quadro da folha) é redesenhada por cima do cabo: é o braço dele que segura a arma
-  heroHandOver(x,y,st);
+  // brilho que corre pela lâmina de vez em quando, com a arma parada
+  if(!OVR&&!st&&!P.atk&&WEAPON_SHINE[id]){const t=(frames%200)/22;if(t<1){const [a0,a1]=WEAPON_SHINE[id],u=(a0+(a1-a0)*t)*g.len-g.len*g.grip;
+    glow(gx+Math.cos(ang)*u*P.face,gy+Math.sin(ang)*u,3,'255,248,225',.55*Math.sin(t*Math.PI))}}
+  // o punho do Teo fecha por cima do cabo: os dedos dão a volta e o cabo aparece antes e depois da mão
+  drawGrip(hx,hy,ang,st);
   if(!OVR&&!st)weaponAura(id,gx,gy,ang,g);
+}
+// trecho da arma (fração do comprimento, a partir do cabo) por onde passa o brilho
+const WEAPON_SHINE={sword:[.3,1],spear:[.75,1],scythe:[.55,1],spade:[.6,1],shovel:[.6,1],hammer:[.7,.95]};
+/* punho fechado em volta do cabo, em pixel art no detalhe do Teo (cada pixel = meio pixel do mundo).
+   O cabo corre no eixo x; os dedos são as faixas cortadas pelas linhas escuras, o polegar passa por cima.
+   Pele enquanto o Teo está de roupa de trabalho, manopla de metal escuro depois da couraça (estágio 2) */
+const GRIP_MAP=[
+  '...oooo...',
+  '..ohhllo..',
+  '.ohhllllo.',
+  'ollllllmdo',
+  'olmolmolmo',
+  'olmolmolmo',
+  'odmodmodmo',
+  '.oddoddoo.',
+  '..oooooo..'];
+const GRIP_PAL=[{o:'#241012',d:'#6b4942',m:'#a47869',l:'#be8d76',h:'#dcb39a'},{o:'#0a0708',d:'#221816',m:'#3a2c28',l:'#5a463e',h:'#8a7062',r:'#9a5426'}];
+const GRIP=[];
+function gripSprite(metal){
+  if(GRIP[metal]||typeof Image==='undefined')return GRIP[metal]||null;
+  const c=document.createElement('canvas');c.width=10;c.height=9;const g=c.getContext('2d');if(!g||!g.fillRect)return null;
+  GRIP_MAP.forEach((row,y)=>[...row].forEach((ch,x)=>{const col=GRIP_PAL[metal][ch];if(col){g.fillStyle=col;g.fillRect(x,y,1,1)}}));
+  if(metal){g.fillStyle=GRIP_PAL[1].r;g.fillRect(2,3,1,1);g.fillRect(5,3,1,1);g.fillRect(7,2,1,1)} // ferrugem nos nós, igual à armadura
+  return GRIP[metal]=prepSheet(c);
+}
+function drawGrip(x,y,ang,st){
+  const im=gripSprite(heroStage()>=2?1:0);if(!im)return drawFist(x,y,ang);
+  ctx.save();ctx.translate(snap(x),snap(y));ctx.scale(P.face,1);ctx.rotate(ang);
+  ctx.drawImage(OVR?im.dark:st||P.stone>0?im.gray:im.img,-2.5,-2.25,5,4.5);ctx.restore();
 }
 // redesenha só a mão do quadro atual do herói por cima da arma (recorte redondo em volta da mão)
 function heroHandOver(x,y,st,r){
@@ -4192,7 +4241,8 @@ function rig(e,d,over){
   const X=Math.round(e.x),Y=Math.round(e.y);
   return(x,y,w,h,c)=>{ctx.fillStyle=OVR||over||c;ctx.fillRect(d>0?X+x:X+e.w-x-w,Y+y,w,h)};
 }
-function shadow(x,y,w){if(OVR)return;ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x,y,w,2,0,0,7);ctx.fill()}
+function shadow(x,y,w){if(OVR)return;ctx.save();ctx.translate(x,y);ctx.scale(1,2.6/w);const g=ctx.createRadialGradient(0,0,0,0,0,w);
+  g.addColorStop(0,'rgba(0,0,0,.5)');g.addColorStop(.55,'rgba(0,0,0,.3)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,w,0,7);ctx.fill();ctx.restore()}
 function flame(x,y,s){
   if(OVR)return;
   const f=Math.sin(frames*.3+x)*1.2;
@@ -5321,6 +5371,18 @@ function drawMap(){
   {let lx=22;for(const [s,c] of [['altar','#e2683c'],['você','#ffde5a'],['lava','#ff6a1a'],['rachado','#ffb040'],['próximo passo','#ffd070']]){textS(s,lx,151,c);ctx.font=FONT_S;lx+=ctx.measureText(s).width+9}
    ctx.font=FONT_S;const r='releia os ecos no altar';if(ecoCount()&&lx+ctx.measureText(r).width<292)textS(r,298,151,'#9ad8ff','right')}
 }
+/* brilho (bloom): a tela é reduzida com só as partes claras realçadas e somada de volta, borrada pela ampliação.
+   Fogo, brasas, magia e lampiões passam a irradiar luz. Só nos gráficos nítidos */
+let BLOOM=null;const BLOOM_A=[.3,.42]; // força do brilho perto e espalhado
+function drawBloom(){
+  if(GFX!=='alto'||OVR||typeof Image==='undefined')return;
+  if(!BLOOM){const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};BLOOM=[mk(160,90),mk(64,36)]}
+  const [a,b]=BLOOM,ga=a.getContext('2d'),gb=b.getContext('2d');
+  ga.globalCompositeOperation='copy';ga.filter='brightness(.75) contrast(2.4) saturate(1.4)';ga.drawImage(cv,0,0,160,90);ga.filter='none';
+  gb.globalCompositeOperation='copy';gb.drawImage(a,0,0,64,36);
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=true;ctx.globalCompositeOperation='lighter';
+  ctx.globalAlpha=BLOOM_A[0];ctx.drawImage(a,0,0,cv.width,cv.height);ctx.globalAlpha=BLOOM_A[1];ctx.drawImage(b,0,0,cv.width,cv.height);ctx.restore();
+}
 function render(){
   ctx.setTransform(RS,0,0,RS,0,0);ctx.imageSmoothingEnabled=false;
   if(!grid){ctx.fillStyle='#120c0e';ctx.fillRect(0,0,VW,VH);return}
@@ -5338,6 +5400,7 @@ function render(){
   drawAtmosphere(cx);
   drawGrade();
   ctx.save();ctx.translate(-cx,-cy);drawParticles(true);ctx.restore();
+  drawBloom();
   drawVignette();drawLowHp();
   drawHud();drawCombo();drawStory();drawBossWarnHud();drawEnrageBanner();drawSigName();
   if(showMap)drawMap();
