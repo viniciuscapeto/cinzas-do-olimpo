@@ -58,6 +58,12 @@ public static class TeoBuild{
     int ya=(int)(H*v0),yb=(int)(H*v1);for(int x=W-1;x>=0;x--)for(int y=ya;y<=yb&&y<H;y++)if(b.GetPixel(x,y).A>0)return new int[]{x,y};
     return new int[]{W/2,H/2};
   }
+  // centro do punho: média dos pixels numa janelinha logo atrás da ponta achada por Hand (abaixo dela, nos braços erguidos)
+  public static double[] Fist(Bitmap b,int[] hd,bool top){
+    int xa=top?hd[0]-2:hd[0]-3,xb=top?hd[0]+2:hd[0],ya=top?hd[1]:hd[1]-2,yb=hd[1]+4;double sx=0,sy=0;int n=0;
+    for(int y=ya;y<=yb;y++)for(int x=xa;x<=xb;x++){if(x<0||y<0||x>=b.Width||y>=b.Height)continue;if(b.GetPixel(x,y).A>0){sx+=x;sy+=y;n++;}}
+    return n>0?new double[]{Math.Round(sx/n,1),Math.Round(sy/n,1)}:new double[]{hd[0],hd[1]};
+  }
 }
 '@
 }
@@ -98,7 +104,8 @@ foreach($stg in 0..4){
       $fx=if($an -eq 'Dead'){$sm.Width/2}else{[TeoBuild]::FootX($sm)}
       $px=[int]($i*$CELL+$AX-[Math]::Round($fx));$py=[int]($AY-$sm.Height)
       $g.DrawImageUnscaled($sm,$px,$py)
-      $hd=[TeoBuild]::Hand($sm,$e[1],$e[2],[bool]$e[3]);$hx=$px-$i*$CELL+$hd[0]-[int](1.5*$Detail);$hy=$py+$hd[1]+$(if($e[3]){[int](2*$Detail)}else{0})
+      # a arma é presa no centro do punho desenhado, e a própria mão do quadro é redesenhada por cima do cabo no jogo
+      $hd=[TeoBuild]::Hand($sm,$e[1],$e[2],[bool]$e[3]);$fc=[TeoBuild]::Fist($sm,$hd,[bool]$e[3]);$hx=$px-$i*$CELL+$fc[0];$hy=$py+$fc[1]
       $hl+="[$hx,$hy,$($e[4])]";$sm.Dispose()
     }
     $g.Dispose();$key="t$stg$an"
