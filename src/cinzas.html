@@ -3927,11 +3927,23 @@ function unifySprite(k,im){
   }
   g.putImageData(d,0,0);return c;
 }
+/* espada de fogo: depois da paleta, o miolo da lâmina vira lava (vermelho escuro → laranja → amarelo pelo brilho).
+   O contorno (pixel que encosta no vazio) e o cabo/guarda (metade de trás) ficam como estão */
+const FIRE_RAMP=[[110,26,8],[190,56,20],[232,100,28],[255,150,48],[255,200,96]];
+function fireBlade(src){
+  const W=src.width,H=src.height,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.drawImage(src,0,0);
+  const d=g.getImageData(0,0,W,H),a=d.data,op=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&a[(y*W+x)*4+3]>0,x0=Math.round(W*.5);
+  for(let y=0;y<H;y++)for(let x=x0;x<W;x++){
+    if(!op(x,y)||!op(x,y-1)||!op(x,y+1)||!op(x+1,y))continue;
+    const i=(y*W+x)*4,L=(a[i]*.3+a[i+1]*.59+a[i+2]*.11)/255,t=Math.min(1,L*1.4+.2)*(FIRE_RAMP.length-1),k=Math.min(FIRE_RAMP.length-2,t|0),f=t-k;
+    for(let j=0;j<3;j++)a[i+j]=FIRE_RAMP[k][j]+(FIRE_RAMP[k+1][j]-FIRE_RAMP[k][j])*f}
+  g.putImageData(d,0,0);return c;
+}
 const SPR={};let sprReady=false;
 (function loadSprites(){
   if(typeof Image==='undefined')return;
   const names=Object.keys(SPRITE_DATA);let n=0;
-  names.forEach(k=>{const im=new Image();im.onload=()=>{try{SPR[k]=prepSheet(unifySprite(k,im));if(HERO_SHEETS.includes(k))SPR[k].st=heroStages(im)}catch(_){}if(++n===names.length)sprReady=Object.keys(SPR).length===names.length};im.onerror=()=>{++n};im.src=SPRITE_DATA[k]});
+  names.forEach(k=>{const im=new Image();im.onload=()=>{try{SPR[k]=prepSheet(k==='w_sword'?fireBlade(unifySprite(k,im)):unifySprite(k,im));if(HERO_SHEETS.includes(k))SPR[k].st=heroStages(im)}catch(_){}if(++n===names.length)sprReady=Object.keys(SPR).length===names.length};im.onerror=()=>{++n};im.src=SPRITE_DATA[k]});
 })();
 /* armadura por nível: o Teo começa de roupa de trabalho (capuz, túnica, calça, manto de lona) e, a cada peça,
    a cinza se junta no corpo dele e vira o metal da armadura da guarda */
