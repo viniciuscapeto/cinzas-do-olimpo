@@ -155,7 +155,7 @@ Se for refazer algum, descreva assim:
 ## 7. Dicas para dar certo
 
 1. Gere **uma folha por vez** e confira: fundo magenta chapado? todos olhando para a direita? mesmo tamanho?
-2. Se a ferramenta deixar, use uma das folhas antigas como **referência de estilo**. As melhores são `Documents\Cinzas do Olimpo\sprites\spritecook\npcs_raw.png` e `knight_raw.png`.
+2. Se a ferramenta deixar, use uma das folhas antigas como **referência de estilo**. As melhores são `Documents\Cinzas do Olimpo\sprites-antigos\spritecook\npcs_raw.png` e `knight_raw.png`.
 3. Se vier com chão, sombra ou cenário, peça de novo e repita: *"solid flat magenta #FF00FF background only"*.
 4. Quadros de animação do mesmo personagem saem melhores **na mesma imagem** do que em imagens separadas.
 5. Salve os PNGs **sem comprimir** (nada de print de tela nem JPG).
