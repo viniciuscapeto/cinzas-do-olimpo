@@ -1785,8 +1785,9 @@ function goreDeath(x,y,kind,dir,big){
   bleed(x,y,kind,big?70:34,dir,big?1.6:1.25);
   const cols=GORE_COL[kind],m=big?8:4;
   for(let i=0;i<m;i++){const a=-Math.PI/2+(Math.random()-.5)*2.2+(dir||0)*.5,sp=2+Math.random()*2.5;
-    fxp.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:.22,life:110,max:110,col:cols[(i+1)%cols.length],size:3,bounce:true,blood:kind==='blood'||kind==='ichor',chunk:true})}
-  if(kind==='blood'||kind==='ichor'){for(let i=0;i<10;i++){const a=Math.random()*Math.PI*2;fxp.push({x,y,vx:Math.cos(a)*.9,vy:Math.sin(a)*.6-.3,life:26,max:26,col:cols[3],size:3,mist:true})}bloodPool(x,y,kind,big?14:9)}
+    if(LIQ(kind))fxp.push({meat:true,x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:.22,spin:(Math.random()-.5)*.6,ang:Math.random()*6,sz:1.3+Math.random()*1.5,life:110,max:110,col:kind==='blood'?'#6a0808':'#2a5a12',hi:cols[2],blood:true,chunk:true});
+    else fxp.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:.22,life:110,max:110,col:cols[(i+1)%cols.length],size:3,bounce:true,chunk:true})}
+  if(kind==='blood'||kind==='ichor'){for(let i=0;i<10;i++){const a=Math.random()*Math.PI*2;fxp.push({puff:true,x,y,vx:Math.cos(a)*.9,vy:Math.sin(a)*.6-.3,r0:1.5,R:4+Math.random()*4,life:26,max:26,col:cols[3],al:.4})}bloodPool(x,y,kind,big?14:9)}
 }
 // uma gota que tocou o chão vira mancha
 function stainAt(p){
@@ -3303,6 +3304,7 @@ function updateParticles(){
     if(tile(tx,ty)==='L')fxp.push({x:tx*TS+Math.random()*16,y:ty*TS+3,vx:(Math.random()-.5)*.4,vy:-1-Math.random(),g:.03,life:40,max:40,col:'#ffb040',size:2,add:true});
   }
   if(state==='play'){if(combo.t>0)combo.t--;else combo.n=0;if(combo.pop>0)combo.pop--;for(const st of stains){st.life--;if(st.wall&&st.h<st.hm)st.h+=.05}if(frames%60===0)stains=stains.filter(st=>st.life>0)}
+  const born=[]; // partículas nascidas de outras neste quadro (entram depois do filtro)
   fxp=fxp.filter(p=>{
     if(p.ghost||p.slash||p.sprfx||p.heroGhost||p.bolt){p.life--;return p.life>0}
     p.x+=p.vx;p.y+=p.vy;if(p.g)p.vy+=p.g;
@@ -3312,10 +3314,12 @@ function updateParticles(){
     if(p.mist){p.vx*=.92;p.vy*=.92}
     if(p.puff){p.vx*=.9;p.vy*=.94}
     if(p.shard){p.ang+=p.spin;p.vx*=.97}
+    if(p.meat){p.ang+=p.spin;if(p.ember&&p.life%5===0)born.push({x:p.x,y:p.y,vx:(Math.random()-.5)*.3,vy:-.5,g:-.01,life:24,max:24,col:'#ff8a3a',size:1,add:true})}
     if(p.num){p.vy=Math.min(p.vy,.2)}
     if(p.ash)p.x+=Math.sin((p.life+p.seed)*.04)*.25;
     if(p.bounce&&solid(tile(Math.floor(p.x/TS),Math.floor(p.y/TS)))){p.y-=p.vy;p.vy*=-0.4;p.vx*=0.7}
     p.life--;return p.life>0});
+  if(born.length)fxp.push(...born);
 }
 function landFx(x,y,v){
   const k=Math.min(1,(v-4)/5);
@@ -4432,33 +4436,86 @@ const DEATH={garg:'stone',guard:'blood',cult:'blood',brute:'blood',hound:'blood'
 let corpses=[],VAR_OVR=null;
 function mkCorpse(e,kx){
   const how=DEATH[e.t]||'blood',side=Math.sign(kx)||-(e.dir||1)||1,cx=e.x+e.w/2,cy=e.y+e.h/2,big=e.w*e.h>520||e.elite;
-  if(how==='blood'||how==='ichor'){explodeGore(cx,cy,how,side,big,e);return}
-  if(how==='fire'){explodeFire(cx,cy,big,e);return}
-  const c=Object.assign({},e,{dead:false,elite:false,hidden:false,atk:null,mode:null,rise:0,flash:6,ct:0,how,side,vx:0,vy:0,landed:false,big});
+  if(how==='blood'||how==='ichor')explodeGore(cx,cy,how,side,big,e);
+  if(how==='fire')explodeFire(cx,cy,big,e);
+  const c=Object.assign({},e,{dead:false,elite:false,hidden:false,atk:null,mode:null,rise:0,flash:how==='fire'?0:6,ct:0,how,side,vx:0,vy:0,landed:false,big});
+  // quem sangra ou explode em fogo é desmembrado: o próprio desenho do inimigo é cortado em pedaços que voam
+  if(how==='blood'||how==='ichor'||how==='fire'){c.gib=how==='fire'?'fire':how;c.pieces=gibPieces(e,side,big);corpses.push(c);if(corpses.length>24)corpses.shift();return}
   if(how==='zombie'||how==='bone'){const cuts=[0,.34,.64,1];c.floorY=floorAt(cx,e.y+e.h-2);
     c.pieces=[0,1,2].map(i=>({y0:cuts[i],y1:cuts[i+1],px:0,py:0,
       vx:how==='bone'?(Math.random()-.5)*1.4:side*(.5+Math.random()*1.8)+(Math.random()-.5),
       vy:how==='bone'?-(.4+Math.random()*.8):-(1.6+Math.random()*2)-(2-i)*.7,ang:0,va:(Math.random()-.5)*(how==='bone'?.18:.34),rest:false}))}
   corpses.push(c);if(corpses.length>24)corpses.shift();
 }
-function explodeGore(x,y,kind,side,big,e){
-  goreDeath(x,y,kind,side,true);
-  const cols=GORE_COL[kind];
-  for(let i=0;i<(big?9:6);i++){const a=-Math.PI/2+(Math.random()-.5)*2.8,sp=2.5+Math.random()*3;
-    fxp.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:.22,life:120,max:120,col:cols[i%cols.length],size:3+(i%2),bounce:true,blood:true,chunk:true})}
-  fxp.push({wave:true,x,y,R:big?34:24,life:16,max:16,col:kind==='blood'?'#ff3a2a':'#8ac04a',vx:0,vy:0});
-  for(let i=0;i<14;i++){const a=Math.random()*Math.PI*2;fxp.push({x,y,vx:Math.cos(a)*1.6,vy:Math.sin(a)*1.1-.4,life:30,max:30,col:cols[3],size:4,mist:true})}
-  shake=Math.max(shake,big?6:3.5);sfx('kill');
+/* pedaços do corpo: alto (gente) = cabeça, dois lados do tronco e as duas pernas; largo (bicho) = quatro quartos.
+   Cada um é um recorte do desenho do inimigo (frações da caixa dele) que voa para longe do centro, girando */
+function gibPieces(e,side,big){
+  const R=Math.random,tall=e.h>=e.w*1.15,boxes=tall?[[0,1,0,.3],[0,.5,.3,.62],[.5,1,.3,.62],[0,.5,.62,1],[.5,1,.62,1]]:[[0,.5,0,.5],[.5,1,0,.5],[0,.5,.5,1],[.5,1,.5,1]];
+  const pow=big?1.25:1;
+  return boxes.map(([x0,x1,y0,y1],i)=>{const dx=(x0+x1)/2-.5,dy=(y0+y1)/2-.5,head=tall&&i===0;
+    return{x0,x1,y0,y1,px:0,py:0,ang:0,rest:false,pooled:false,
+      vx:(side*(.8+R()*1.6)+dx*(4+R()*3))*pow,vy:(-(2.2+R()*2.4)+dy*1.5-(head?1.6:0))*pow,va:(R()-.5)*(head?.6:.42),
+      bleed:head?110:60+R()*50,pulse:Math.floor(R()*9)}});
 }
+// explosão de sangue: clarão, nuvem que cresce e escurece, jato grande, pedaços de carne girando e o anel do impacto
+function explodeGore(x,y,kind,side,big,e){
+  const R=Math.random,cols=GORE_COL[kind],blood=kind==='blood',cloud=blood?['#b01414','#7a0808','#4a0606','#2a0404']:['#5aa02a','#3a7a1a','#2a5a12','#16300a'];
+  bloodPool(x,y,kind,big?14:9); // o jato da morte já saiu no golpe (goreDeath em hitEnemy)
+  fxp.push({puff:true,add:true,x,y,vx:0,vy:0,r0:3,R:big?20:14,life:6,max:6,col:'#fff0e0'});
+  // névoa de sangue: várias nuvenzinhas translúcidas puxadas pelo golpe, que escurecem e caem um pouco
+  for(let i=0;i<(big?18:12);i++){const a=R()*Math.PI*2,sp=.3+R()*1.8;
+    fxp.push({puff:true,x:x+Math.cos(a)*4,y:y+Math.sin(a)*4,vx:Math.cos(a)*sp+side*(.4+R()*.8),vy:Math.sin(a)*sp*.6,g:.02,r0:1+R()*1.5,R:(big?8:5)+R()*5,life:22+R()*24,max:46,ramp:cloud,al:.42})}
+  for(let i=0;i<(big?16:11);i++){const a=-Math.PI/2+(R()-.5)*3+side*.4,sp=2+R()*3.6;
+    fxp.push({meat:true,x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:.22,spin:(R()-.5)*.6,ang:R()*6,sz:1.5+R()*2.2,life:160,max:160,col:blood?(i%3?'#8a0e0e':'#5a0606'):(i%3?'#3a7a1a':'#2a5a12'),hi:blood?'#e04a3a':'#8ac04a',blood:true,chunk:true})}
+  for(let i=0;i<(big?40:26);i++){const a=-Math.PI/2+(R()-.5)*2.6+side*.5,sp=3+R()*4;
+    fxp.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:.2,life:90,max:90,col:cols[i%cols.length],size:1+(R()<.4?1:0),blood:true})}
+  fxp.push({wave:true,x,y,R:big?38:26,life:16,max:16,col:blood?'#ff3a2a':'#8ac04a',vx:0,vy:0});
+  shake=Math.max(shake,big?7:4.5);hitstop=Math.max(hitstop,big?5:3);sfx('kill');
+}
+// explosão de fogo: clarão branco, bola de fogo que esfria (branco → amarelo → laranja → vermelho → fuligem), fumaça que sobe, fagulhas e chão queimado
 function explodeFire(x,y,big,e){
-  const n=big?60:42;
-  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,sp=Math.random()*(big?4.5:3.5);
-    fxp.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-.6,g:-.02,life:18+Math.random()*22,max:40,col:['#fff2b0','#ffd070','#ff8a3a','#ff3a1a'][i%4],size:2+(i%3===0?1:0),add:true,mist:true})}
-  for(let i=0;i<16;i++)fxp.push({x:x+(Math.random()-.5)*e.w,y:y+(Math.random()-.5)*e.h*.6,vx:(Math.random()-.5)*.6,vy:-.4-Math.random()*.8,life:60,max:60,col:i%2?'#2a2226':'#3e3236',size:3+(i%2),mist:true});
-  for(let i=0;i<10;i++){const a=-Math.PI/2+(Math.random()-.5)*2.6,sp=2+Math.random()*3;fxp.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:.12,life:50,max:50,col:'#ffb040',size:1,add:true})}
-  fxp.push({wave:true,x,y,R:big?44:30,life:18,max:18,col:'#ffb040',vx:0,vy:0},{wave:true,x,y,R:big?26:18,life:12,max:12,col:'#fff2b0',vx:0,vy:0});
-  const fy=floorAt(x,e.y+e.h-2);if(fy-(e.y+e.h)<40)for(let i=-2;i<=2;i++)stains.push({x:Math.round(x+i*3-1),y:fy,w:4,col:i%2?'#1a1012':'#2a1a14',life:1500});
-  shake=Math.max(shake,big?7:4);hitstop=Math.max(hitstop,4);sfx('fireball');
+  const R=Math.random,fire=['#fff6d0','#ffd070','#ff8a3a','#e0401a','#5a1a10'],smoke=['#5a4a44','#3e3436','#2a2426'];
+  fxp.push({puff:true,add:true,x,y,vx:0,vy:0,r0:4,R:big?26:18,life:6,max:6,col:'#fffbe8'});
+  for(let i=0;i<(big?18:13);i++){const a=R()*Math.PI*2,sp=.5+R()*(big?2.2:1.6);
+    fxp.push({puff:true,add:true,x:x+Math.cos(a)*4,y:y+Math.sin(a)*4,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-.35,r0:2+R()*2,R:(big?13:9)+R()*7,life:16+R()*16,max:32,ramp:fire})}
+  for(let i=0;i<(big?16:11);i++){const a=R()*Math.PI*2;
+    fxp.push({puff:true,x:x+Math.cos(a)*6,y:y+Math.sin(a)*4,vx:Math.cos(a)*.5,vy:-.45-R()*.7,r0:3+R()*2,R:(big?18:13)+R()*9,life:60+R()*50,max:110,ramp:smoke})}
+  for(let i=0;i<(big?26:18);i++){const a=-Math.PI/2+(R()-.5)*3,sp=2.5+R()*4;
+    fxp.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:.12,life:40+R()*30,max:70,col:R()<.5?'#ffd070':'#ff8a3a',size:1,add:true,bounce:true})}
+  for(let i=0;i<(big?8:5);i++){const a=-Math.PI/2+(R()-.5)*2.6,sp=2+R()*3;
+    fxp.push({meat:true,x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:.2,spin:(R()-.5)*.5,ang:R()*6,sz:1.5+R()*2,life:120,max:120,col:'#2a2022',hi:'#ff8a3a',bounce:true,ember:true})}
+  fxp.push({wave:true,x,y,R:big?48:32,life:18,max:18,col:'#ffb040',vx:0,vy:0},{wave:true,x,y,R:big?28:19,life:12,max:12,col:'#fff2b0',vx:0,vy:0});
+  const fy=floorAt(x,e.y+e.h-2);if(fy-(e.y+e.h)<40)for(let i=-3;i<=3;i++)stains.push({x:Math.round(x+i*3-1),y:fy,w:4,col:i%2?'#1a1012':'#2a1a14',life:1500});
+  shake=Math.max(shake,big?8:5);hitstop=Math.max(hitstop,5);sfx('fireball');
+}
+/* pedaços desmembrados: caem com gravidade, batem em parede, quicam no chão até parar.
+   Do corte sai sangue em pulsos (mais forte no começo); parado, o pedaço faz uma poça. Os de fogo soltam brasa e fumaça */
+const GIB_LIFE=300,GIB_FADE=60;
+function updateGibs(c){
+  const R=Math.random,cols=c.gib==='fire'?null:GORE_COL[c.gib],big=c.big;
+  for(const p of c.pieces){
+    const hw=(p.x1-p.x0)*c.w/2,hh=(p.y1-p.y0)*c.h/2,wx=()=>c.x+(p.x0+p.x1)/2*c.w+p.px,wy=()=>c.y+(p.y0+p.y1)/2*c.h+p.py;
+    if(!p.rest){
+      p.vy=Math.min(p.vy+G*.9,MAXF);p.px+=p.vx;p.ang+=p.va;
+      if(solid(tile(Math.floor((wx()+Math.sign(p.vx)*hw)/TS),Math.floor(wy()/TS)))){p.px-=p.vx;p.vx*=-.35;p.va*=-.6}
+      p.py+=p.vy;
+      const fl=floorAt(wx(),wy()-p.vy-hh),bottom=wy()+Math.min(hh,hw+1);
+      if(p.vy>0&&bottom>=fl){p.py-=bottom-fl;
+        if(Math.abs(p.vy)<1.3){p.rest=true;p.vy=0;p.vx=0;p.ang=Math.round(p.ang/(Math.PI/2))*(Math.PI/2)} // deita no chão
+        else{p.vy*=-.32;p.vx*=.55;p.va*=.5;
+          if(cols)bleed(wx(),fl-2,c.gib,big?7:5,Math.sign(p.vx)||c.side,.6);else burst(wx(),fl-2,'#ff8a3a',5,1.2,true)}}}
+    else p.va=0;
+    // corte sangrando: gotas o tempo todo e um jato a cada pulso; o jato enfraquece
+    if(p.bleed>0&&fxp.length<1400){p.bleed--;const k=Math.min(1,p.bleed/60),x=wx(),y=wy()-(p.rest?1:0);
+      if(cols){
+        if(R()<.45*k+.1)fxp.push({x:x+(R()-.5)*hw,y:y+(R()-.5)*hh,vx:p.vx*.2+(R()-.5)*.6,vy:-R()*.6,g:.2,life:70,max:70,col:cols[R()<.7?0:3],size:1,blood:true});
+        if(++p.pulse%10===0){const a=-Math.PI/2+(R()-.5)*1.4+p.ang*.3,sp=(1.2+R()*1.6)*(.4+k);
+          for(let i=0;i<(big?6:4);i++)fxp.push({x,y,vx:Math.cos(a)*sp+(R()-.5)*.5,vy:Math.sin(a)*sp+(R()-.5)*.5,g:.2,life:70,max:70,col:cols[i%2?1:0],size:i%3?1:2,blood:true})}
+        if(p.rest&&!p.pooled&&p.bleed<40){p.pooled=true;bloodPool(x,y,c.gib,big?6:4)}
+      }else{
+        if(R()<.35*k+.08)fxp.push({x:x+(R()-.5)*hw,y:y+(R()-.5)*hh,vx:(R()-.5)*.4,vy:-.4-R()*.6,g:-.01,life:30+R()*20,max:50,col:R()<.6?'#ff8a3a':'#ffd070',size:1,add:true});
+        if(R()<.25*k)fxp.push({puff:true,x,y:y-2,vx:(R()-.5)*.3,vy:-.4-R()*.4,r0:1.5,R:5+R()*4,life:40,max:40,ramp:['#4a3e3a','#2e2628']})}}
+  }
 }
 function updateCorpses(){
   corpses=corpses.filter(c=>{
@@ -4477,6 +4534,7 @@ function updateCorpses(){
         for(let i=0;i<12;i++)fxp.push({x:c.x+Math.random()*c.w,y:c.y+c.h-4,vx:(Math.random()-.5)*1.4,vy:-.3-Math.random()*.6,life:46,max:46,col:i%2?'#6a6a72':'#8a8a92',size:3,mist:true});
         fxp.push({wave:true,flat:true,x:c.x+c.w/2,y:c.y+c.h,R:c.w+10,life:16,max:16,col:'#cfc6b4',vx:0,vy:0});shake=Math.max(shake,fly?6:4);sfx('break');return false}
       return true}
+    if(c.gib){updateGibs(c);return c.ct<GIB_LIFE}
     // zumbi e esqueleto: os pedaços se soltam, quicam e ficam no chão até sumir
     for(const p of c.pieces){if(p.rest)continue;
       p.vy+=G*.9;p.px+=p.vx;p.py+=p.vy;p.ang+=p.va;
@@ -4497,11 +4555,15 @@ function drawCorpse(c){
     if(!OVR){ctx.strokeStyle='#1a1418';ctx.lineWidth=1;ctx.beginPath();const cx=c.x+c.w/2,n=Math.floor(k*5)+1;
       for(let i=0;i<n;i++){const y=c.y+c.h*(.15+i*.17);ctx.moveTo(cx-c.w*.4+i*2,y);ctx.lineTo(cx+(i%2?3:-3),y+5);ctx.lineTo(cx+c.w*.35,y+2)}ctx.stroke()}
     ctx.restore();return}
-  const a=c.ct>90?1-(c.ct-90)/40:1;if(a<=0)return;const ga=ctx.globalAlpha;
+  const a=c.gib?(c.ct>GIB_LIFE-GIB_FADE?(GIB_LIFE-c.ct)/GIB_FADE:1):c.ct>90?1-(c.ct-90)/40:1;if(a<=0)return;const ga=ctx.globalAlpha;
+  if(c.gib==='fire')VAR_OVR='gray'; // queimado: os pedaços saem carbonizados
   for(const p of c.pieces){
-    const midY=c.y+(p.y0+p.y1)/2*c.h,cx=c.x+c.w/2,top=p.y0===0?c.y-24:c.y+p.y0*c.h,bot=p.y1===1?c.y+c.h+4:c.y+p.y1*c.h;
-    ctx.save();ctx.globalAlpha=(typeof ga==='number'?ga:1)*a;ctx.translate(cx+p.px,midY+p.py);ctx.rotate(p.ang);ctx.translate(-cx,-midY);
-    ctx.beginPath();ctx.rect(c.x-24,top,c.w+48,bot-top);ctx.clip();drawEnemy(c);ctx.restore()}
+    // recorte do pedaço (as bordas de fora vão além da caixa para pegar o desenho inteiro)
+    const x0=p.x0||0,x1=p.x1==null?1:p.x1,midX=c.x+(x0+x1)/2*c.w,midY=c.y+(p.y0+p.y1)/2*c.h,
+      left=x0===0?c.x-24:c.x+x0*c.w,right=x1===1?c.x+c.w+24:c.x+x1*c.w,top=p.y0===0?c.y-24:c.y+p.y0*c.h,bot=p.y1===1?c.y+c.h+4:c.y+p.y1*c.h;
+    ctx.save();ctx.globalAlpha=(typeof ga==='number'?ga:1)*a;ctx.translate(midX+p.px,midY+p.py);ctx.rotate(p.ang);ctx.translate(-midX,-midY);
+    ctx.beginPath();ctx.rect(left,top,right-left,bot-top);ctx.clip();drawEnemy(c);ctx.restore()}
+  VAR_OVR=null;
 }
 function drawEnemies(){
   for(const e of ents)if(!e.dead){VAR_OVR=e.dream?'violet':null;drawEnemy(e)}VAR_OVR=null;
@@ -4925,7 +4987,13 @@ function drawParticles(add){
     if(p.num){if(!add){ctx.globalAlpha=Math.min(1,p.life/14);text(p.txt,Math.round(p.x),Math.round(p.y),p.col,'center');ctx.globalAlpha=1}continue}
     if(p.wave){if(add){const k=1-p.life/p.max;ctx.globalAlpha=p.life/p.max*.7;ctx.strokeStyle=p.col;ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(p.x,p.y,2+k*p.R,(2+k*p.R)*(p.flat?.22:1),0,0,7);ctx.stroke();ctx.globalAlpha=1}continue}
     if(p.bolt){if(add)drawBolt(p);continue}
-    if(p.puff){if(!add){const k=1-p.life/p.max;ctx.globalAlpha=(1-k)*(1-k)*.75;ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(Math.round(p.x),Math.round(p.y),p.r0+Math.sqrt(k)*p.R,0,7);ctx.fill();ctx.globalAlpha=1}continue}
+    // nuvem: cresce e some; com ramp, a cor muda com a idade (bola de fogo esfriando, sangue escurecendo)
+    if(p.puff){if(!!p.add===add){const k=1-p.life/p.max;ctx.globalAlpha=(1-k)*(1-k)*(p.al||.75);ctx.fillStyle=p.ramp?p.ramp[Math.min(p.ramp.length-1,Math.floor(k*p.ramp.length))]:p.col;ctx.beginPath();ctx.arc(Math.round(p.x),Math.round(p.y),p.r0+Math.sqrt(k)*p.R,0,7);ctx.fill();ctx.globalAlpha=1}continue}
+    // pedaço de carne (ou carvão) girando, com um brilho num canto; o de carvão fica com a ponta em brasa
+    if(p.meat){const s=p.sz;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.ang);
+      if(!add){ctx.globalAlpha=Math.min(1,p.life/20);ctx.fillStyle=p.col;ctx.fillRect(-s,-s*.7,s*2,s*1.4);ctx.fillStyle=p.hi;ctx.fillRect(-s,-s*.7,s,Math.max(.6,s*.5))}
+      else if(p.ember){ctx.globalAlpha=Math.min(1,p.life/30)*.8;ctx.fillStyle=p.hi;ctx.fillRect(s*.2,-s*.4,s*.8,s*.8)}
+      ctx.restore();ctx.globalAlpha=1;continue}
     if(p.shard){if(add){ctx.globalAlpha=Math.min(1,p.life/14);ctx.fillStyle=p.col;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.ang);ctx.beginPath();ctx.moveTo(p.sz,0);ctx.lineTo(-p.sz*.6,p.sz*.7);ctx.lineTo(-p.sz*.4,-p.sz*.8);ctx.closePath();ctx.fill();ctx.restore();ctx.globalAlpha=1}continue}
     if(p.streak){if(add){ctx.globalAlpha=p.life/p.max*.55;ctx.fillStyle=p.col;ctx.fillRect(p.x,p.y,p.len,1);ctx.globalAlpha=1}continue}
     if(!!p.add!==add||p.ghost)continue;
@@ -4934,6 +5002,9 @@ function drawParticles(add){
       const L=(p.small?14:26)*(0.6+0.4*(1-a));ctx.strokeStyle=`rgba(255,240,200,${a})`;ctx.lineWidth=(p.small?1:3)*a+0.5;
       ctx.beginPath();ctx.moveTo(p.x-Math.cos(p.ang)*L,p.y-Math.sin(p.ang)*L);ctx.lineTo(p.x+Math.cos(p.ang)*L,p.y+Math.sin(p.ang)*L);ctx.stroke();continue}
     const al=p.mote?Math.sin(a*Math.PI)*.8:a;ctx.globalAlpha=al;ctx.fillStyle=p.col;
+    // gota rápida: risco na direção do voo (rastro do líquido), em vez de quadradinho
+    if(p.blood&&!p.chunk&&!add){const sp=Math.hypot(p.vx,p.vy);if(sp>1.4){const k=Math.min(2.2,sp*.55);ctx.strokeStyle=p.col;ctx.lineWidth=p.size*.8;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(p.x-p.vx/sp*k*2,p.y-p.vy/sp*k*2);ctx.lineTo(p.x,p.y);ctx.stroke();continue}}
     if(RS>1){ // alta resolução: brasas andam suave e ganham um halo
       ctx.fillRect(p.x,p.y,p.size,p.size);
       if(add&&GFX==='alto'){const h=p.size*2.6;ctx.globalAlpha=al*.22;ctx.fillRect(p.x+p.size/2-h/2,p.y+p.size/2-h/2,h,h)}

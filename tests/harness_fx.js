@@ -3,9 +3,13 @@
  // animação de morte
  fresh();P.x=8*16;P.y=22*16-22;P.vy=0;P.inv=99999;run(5);
  const kill=(t,x,y)=>{save.flags.lvInfo=1;if(state==='msg'){state='play';scr.hidden=true}const e=mkEnemy({t,x,y});e.hidden=false;e.rise=0;ents.push(e);P.atk={n:1,t:5,hit:new Set()};hitEnemy(e,999,1,0);P.atk=null;return e};
- fxp=[];kill('hound',12,21);ok(corpses.length===0&&fxp.filter(p=>p.blood).length>40&&fxp.some(p=>p.wave),'cão explode em sangue');
+ fxp=[];corpses=[];kill('hound',12,21);ok(fxp.filter(p=>p.blood).length>40&&fxp.some(p=>p.wave),'cão explode em sangue');
+ {const c=corpses[corpses.length-1];ok(c&&c.gib==='blood'&&c.pieces.length===4,'cão é desmembrado em 4 pedaços do próprio desenho')}
+ run(150);ok(corpses.length===1&&corpses[0].pieces.every(p=>p.rest),'os pedaços caem e ficam parados no chão');
  run(90);ok(stains.length>10,'o sangue mancha o chão');
- fxp=[];stains=[];kill('bro',12,21);ok(corpses.length===0&&fxp.filter(p=>p.add&&p.col==='#ffd070').length>5&&stains.length>0,'mago de fogo explode em fogo e deixa marca queimada');
+ run(200);ok(corpses.length===0,'os pedaços somem depois de um tempo');
+ fxp=[];stains=[];kill('bro',12,21);ok(fxp.filter(p=>p.add&&p.ramp).length>5&&stains.length>0,'mago de fogo explode em fogo e deixa marca queimada');
+ {const c=corpses[corpses.length-1];ok(c&&c.gib==='fire'&&c.pieces.length>=4,'mago de fogo se parte em pedaços queimados')}
  corpses=[];kill('zomb',12,21);ok(corpses[0]&&corpses[0].how==='zombie'&&corpses[0].pieces.length===3,'zumbi desmonta em 3 pedaços');
  run(40);{const ps=corpses[0].pieces;ok(Math.abs(ps[0].px-ps[2].px)+Math.abs(ps[0].py-ps[2].py)>4,'os pedaços se separam')}
  run(100);ok(corpses.length===0,'pedaços somem');
