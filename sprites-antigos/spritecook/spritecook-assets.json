@@ -1,0 +1,7 @@
+﻿{"spritecook":[
+ {"asset_id":"f4125fd5-2552-4edd-9a13-a58b3f530dae","label":"cavaleiro negro 4x4","file":"knight_raw.png"},
+ {"asset_id":"e165aa10-b99d-421a-89fd-4fe5cf54d5d2","label":"NPCs + Andros 4x4","file":"npcs_raw.png"},
+ {"asset_id":"00dae5d7-f5b8-4959-8805-311a96ddaaba","label":"chefes A 3x3 (corcel, escultora, cães)","file":"bossesA_raw.png"},
+ {"asset_id":"ac535b7a-03bf-463f-b137-fcd71c3cd82c","label":"chefes B 3x3 (besta, Andros demônio, carniçal, caveira)","file":"bossesB_raw.png"},
+ {"asset_id":"1e65bdba-6b35-4355-b6b7-f90aa7c9e340","label":"inimigos 4x4","file":"enemies_raw.png"}
+]}
