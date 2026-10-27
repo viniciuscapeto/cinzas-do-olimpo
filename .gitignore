@@ -1,4 +1,4 @@
-desktop/node_modules/
+﻿desktop/node_modules/
 desktop/dist/
 desktop/game/
 *.log
@@ -6,5 +6,3 @@ sprite-gemini/**/pronto_*.png
 sprite-gemini/**/_previa*.png
 desktop/dist-demo/
 demo/
-
-_pasta-antiga/
